@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Launch Resonite": {
+      "commandName": "Executable",
+      "executablePath": "$(GamePath)Resonite.exe",
+      "commandLineArgs": "-Invisible -LoadAssembly \"Libraries/ResoniteModLoader.dll\" -DoNotAutoLoadHome",
+      "workingDirectory": "$(GamePath)"
+    }
+  }
+}
