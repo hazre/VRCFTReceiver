@@ -11,7 +11,7 @@ namespace VRCFTReceiver
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> KEY_RECEIVER_PORT = new("Receiver Port", "Which port should the OSC data be received from?", () => 9000);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> KEY_SENDER_PORT = new("Sender Port", "Which port should the OSC parameters message be sent from?", () => 9001);
+        public static ModConfigurationKey<int> KEY_SENDER_PORT = new("Sender Port", "Which port should the OSC parameters message be sent to?", () => 9001);
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> KEY_TIMEOUT = new("Timeout", "OSC Receiving Timeout (in ms).", () => 10_000);
         public static ModConfiguration config;
