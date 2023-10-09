@@ -9,11 +9,11 @@ namespace VRCFTReceiver
     public class Loader : ResoniteMod
     {
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> KEY_PORT = new("port", "VRCFT Port.", () => 9000);
+        public static ModConfigurationKey<int> KEY_RECEIVER_PORT = new("Receiver Port", "Which port should the OSC data be received from?", () => 9000);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> KEY_AVATAR_PORT = new("avatar_port", "VRCFT Avatar Port.", () => 9001);
+        public static ModConfigurationKey<int> KEY_SENDER_PORT = new("Sender Port", "Which port should the OSC parameters message be sent from?", () => 9001);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> KEY_TIMEOUT = new("timeout", "VRCFT Websocket Timeout (in ms).", () => 10_000);
+        public static ModConfigurationKey<int> KEY_TIMEOUT = new("Timeout", "OSC Receiving Timeout (in ms).", () => 10_000);
         public static ModConfiguration config;
         public static VRCFTOSC OSC = new VRCFTOSC();
         public override string Name => "VRCFTReceiver";
@@ -27,7 +27,7 @@ namespace VRCFTReceiver
             harmony.PatchAll();
             Engine.Current.OnReady += () =>
             {
-                    OSC.Init(config.GetValue(KEY_PORT), config.GetValue(KEY_TIMEOUT));
+                    OSC.Init(config.GetValue(KEY_RECEIVER_PORT), config.GetValue(KEY_TIMEOUT));
             };
         }
 
@@ -66,7 +66,7 @@ namespace VRCFTReceiver
             public static void Postfix(UserRoot __instance)
             {
                 if (!__instance.ActiveUser.IsLocalUser) return;
-                OSC.SendAvatarRequest(config.GetValue(KEY_AVATAR_PORT));
+                OSC.SendAvatarRequest(config.GetValue(KEY_SENDER_PORT));
 
                 var dvslot = __instance.Slot.FindChildOrAdd("VRCFTReceiver", true);
 
