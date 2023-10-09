@@ -15,12 +15,9 @@ namespace VRCFTReceiver
         private Socket _receiver;
         private bool _loop = true;
         private Thread _thread;
-        private int _resolvedPort;
-        private const int DEFAULT_PORT = 9000;
-        private const int TIMEOUT_MS = 10_000;
         public static Dictionary<World, Dictionary<string, ValueStream<float>>> VRCFTDictionary = new();
 
-        public void Init(int? port = null)
+        public void Init(int port, int timeout)
         {
             Loader.Msg("Initializing VRCFTOSC Client");
             if (_receiver != null)
@@ -29,19 +26,18 @@ namespace VRCFTReceiver
             }
 
             _receiver = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            _resolvedPort = port ?? DEFAULT_PORT;
-            _receiver.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), _resolvedPort));
-            _receiver.ReceiveTimeout = TIMEOUT_MS;
+            _receiver.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+            _receiver.ReceiveTimeout = timeout;
 
             _loop = true;
-            _thread = new Thread(new ThreadStart(ListenLoop));
+            _thread = new Thread(() => ListenLoop(port, timeout));
             _thread.Start();
             Loader.Msg("VRCFTOSC Loop Started");
         }
 
-        public void SendAvatarRequest()
+        public void SendAvatarRequest(int avatarport)
         {
-            _receiver.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 9001));
+            _receiver.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), avatarport));
 
             string address = "/avatar/change";
             string type = "s";
@@ -184,7 +180,7 @@ namespace VRCFTReceiver
             return myFloat;
         }
 
-        private void ListenLoop()
+        private void ListenLoop(int port, int timeout)
         {
             var buffer = new byte[4096];
 
@@ -243,8 +239,8 @@ namespace VRCFTReceiver
                         _receiver.Close();
                         _receiver.Dispose();
                         _receiver = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                        _receiver.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), _resolvedPort));
-                        _receiver.ReceiveTimeout = TIMEOUT_MS;
+                        _receiver.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), port));
+                        _receiver.ReceiveTimeout = timeout;
                     }
                 }
                 catch (Exception e) {
