@@ -1,12 +1,20 @@
 using HarmonyLib;
 using ResoniteModLoader;
 using FrooxEngine;
+using Elements.Core;
+using System.IO;
 
 namespace VRCFTReceiver
 {
     public class Loader : ResoniteMod
     {
-
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<int> KEY_PORT = new("port", "VRCFT Port.", () => 9000);
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<int> KEY_AVATAR_PORT = new("avatar_port", "VRCFT Avatar Port.", () => 9001);
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<int> KEY_TIMEOUT = new("timeout", "VRCFT Websocket Timeout (in ms).", () => 10_000);
+        public static ModConfiguration config;
         public static VRCFTOSC OSC = new VRCFTOSC();
         public override string Name => "VRCFTReceiver";
         public override string Author => "hazre";
@@ -14,9 +22,13 @@ namespace VRCFTReceiver
         public override string Link => "https://github.com/hazre/VRCFTReceiver/";
         public override void OnEngineInit()
         {
+            config = GetConfiguration();
             Harmony harmony = new Harmony("me.hazre.VRCFTReceiver");
             harmony.PatchAll();
-            OSC.Init();
+            Engine.Current.OnReady += () =>
+            {
+                    OSC.Init(config.GetValue(KEY_PORT), config.GetValue(KEY_TIMEOUT));
+            };
         }
 
         public static ValueStream<float> CreateStream(World world, string parameter)
@@ -54,7 +66,7 @@ namespace VRCFTReceiver
             public static void Postfix(UserRoot __instance)
             {
                 if (!__instance.ActiveUser.IsLocalUser) return;
-                OSC.SendAvatarRequest();
+                OSC.SendAvatarRequest(config.GetValue(KEY_AVATAR_PORT));
 
                 var dvslot = __instance.Slot.FindChildOrAdd("VRCFTReceiver", true);
 
