@@ -61,3 +61,7 @@ Last Tested with [VRCFaceTracking v5.1.1](https://github.com/benaclejames/VRCFac
 - [Sample Avatar used "Aura" by Meta](https://github.com/oculus-samples/Unity-Movement/tree/main/Samples/Models/Aura)
 - [Based on dfgHiatus's VRCFaceTracking Wrapper Code](https://github.com/dfgHiatus/VRCFT-Module-Wrapper/blob/master/VRCFTModuleWrapper/OSC/VRCFTOSC.cs)
 - [Bunch of help from art0007i](https://github.com/art0007i)
+<<<<<<< HEAD
+=======
+- [Help from knackrack615](https://github.com/knackrack615)
+>>>>>>> 096ecc6 (release 1.0.0)
