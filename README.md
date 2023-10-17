@@ -9,10 +9,12 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 
 1. Install [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoader).
 2. Place [VRCFTReceiver.dll](https://github.com/hazre/VRCFTReceiver/releases/latest/download/VRCFTReceiver.dll) into your `rml_mods` folder. This folder should be at `C:\Program Files (x86)\Steam\steamapps\common\Resonite\rml_mods` for a default install. You can create it if it's missing, or if you launch the game once with ResoniteModLoader installed it will create the folder for you.
-3. Copy `vrc_parameters.json` template from the static folder (or from Releases) into `C:\Users\{USER}\AppData\LocalLow\VRChat\VRChat\OSC\{USER_UUID}\Avatars`.
+3. ~~Copy `vrc_parameters.json` template from the static folder (or from Releases) into `C:\Users\{USER}\AppData\LocalLow\VRChat\VRChat\OSC\{USER_UUID}\Avatars`.~~ (Not required as of v1.0.3)
 4. Launch VRCFaceTracking
 5. Start the game. If you want to verify that the mod is working you can check your Resonite logs.
 6. Use the dynamic variables to drive your avatar's blendshapes
+
+> As of v1.0.3, `vrc_parameters.json` template with all the parameters now gets created at `C:\Users\{USER}\AppData\LocalLow\VRChat\VRChat\OSC\vrcft\Avatars` on initial install, so you don't need to copy it over manually anymore. You can edit this file if you wish to change the parameters.
 
 ## Requirements
 
