@@ -16,9 +16,12 @@ namespace VRCFTReceiver
         private Thread _thread;
         public static Dictionary<World, Dictionary<string, ValueStream<float>>> VRCFTDictionary = new();
 
-        public void Init(string ip, int port, int timeout)
+        public async void Init(string ip, int port, int timeout)
         {
             Loader.Msg("Initializing VRCFTOSC Client");
+
+            await ParametersFile.Create();
+
             if (_receiver != null)
             {
                 return;
@@ -37,18 +40,14 @@ namespace VRCFTReceiver
         public void SendAvatarRequest(string ip, int avatarport)
         {
             _receiver.Connect(new IPEndPoint(IPAddress.Parse(ip), avatarport));
+            byte[] message = OscMessageToByteArray<string>("/avatar/change", "vrc_parameters");
 
-            string address = "/avatar/change";
-            string type = "s";
-            string value = "vrc_parameters";
-
-            byte[] message = OscMessageToByteArray(address, type, value);
             _receiver.Send(message, message.Length, SocketFlags.None);
             Loader.Msg("Sent SendAvatarRequest");
-        } 
+        }
 
         // Encode an OSC message
-        byte[] OscMessageToByteArray(string address, string type, string value)
+        public byte[] OscMessageToByteArray<T>(string address, T value)
         {
             List<byte> data = new List<byte>();
 
@@ -62,8 +61,27 @@ namespace VRCFTReceiver
                 data.Add(0);
             }
 
+            // Determine type tag based on type of T
+            string typeTag = string.Empty;
+            if (typeof(T) == typeof(int))
+            {
+                typeTag = "i";
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                typeTag = "f";
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                typeTag = "s";
+            }
+            else if (typeof(T) == typeof(bool))
+            {
+                typeTag = (bool)(object)value ? "T" : "F";
+            }
+
             // Add type tag string
-            data.AddRange(Encoding.ASCII.GetBytes("," + type));
+            data.AddRange(Encoding.ASCII.GetBytes("," + typeTag));
             data.Add(0); // OSC strings must be null-terminated
 
             // Pad to nearest 4 bytes
@@ -72,9 +90,25 @@ namespace VRCFTReceiver
                 data.Add(0);
             }
 
-            // Add value
-            data.AddRange(Encoding.ASCII.GetBytes(value));
-            data.Add(0); // OSC strings must be null-terminated
+            // Convert value to byte array and add to data
+            if (typeof(T) == typeof(int))
+            {
+                data.AddRange(BitConverter.GetBytes((int)(object)value));
+            }
+            else if (typeof(T) == typeof(float))
+            {
+                data.AddRange(BitConverter.GetBytes((float)(object)value));
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                data.AddRange(Encoding.ASCII.GetBytes((string)(object)value));
+                data.Add(0); // OSC strings must be null-terminated
+            }
+            else if (typeof(T) == typeof(bool))
+            {
+                // No value needs to be added for booleans
+                // The type tag alone is sufficient to represent the value
+            }
 
             // Pad to nearest 4 bytes
             while (data.Count % 4 != 0)
@@ -194,6 +228,7 @@ namespace VRCFTReceiver
                         Msg msg = ParseOSC(buffer, length);
                         if (msg.success)
                         {
+                            if (!msg.address.Contains("FT/v2")) continue;
                             var focus = Engine.Current.WorldManager?.FocusedWorld;
                             // If world is not available
                             if (focus != null)
@@ -242,9 +277,7 @@ namespace VRCFTReceiver
                         _receiver.ReceiveTimeout = timeout;
                     }
                 }
-                catch (Exception e) {
-                    Loader.Error(e.ToString());
-                }
+                catch {}
             }
         }
 
