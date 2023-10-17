@@ -48,7 +48,7 @@ Since we aren't using VRCFT for _VRChat_, we need to get creative and create our
 
 The rest is pretty straight forward, we just _forward_ all the osc messages as Resonite's ValueStream's. Which is accessible using dynamic variable in this format: `User/{Paramter name}`.
 
-You can find all the dynamic avatars in a slot called `VRCFTReceiver` in your User Root.
+You can find all the dynamic variables in a slot called `VRCFTReceiver` in your User Root.
 
 Then you can use those dynamic variables to drive blendshapes or whatever however you want but you can use my prefab as a template.
 
