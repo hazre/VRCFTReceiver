@@ -14,6 +14,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 5. Start the game. If you want to verify that the mod is working you can check your Resonite logs.
 6. Use the dynamic variables to drive your avatar's blendshapes
 
+> [!NOTE]
 > As of v1.0.3, `vrc_parameters.json` template with all the parameters now gets created at `C:\Users\{USER}\AppData\LocalLow\VRChat\VRChat\OSC\vrcft\Avatars` on initial install, so you don't need to copy it over manually anymore. You can edit this file if you wish to change the parameters.
 
 ## Requirements
