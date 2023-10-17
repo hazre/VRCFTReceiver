@@ -1081,6 +1081,28 @@
       }
     },
     {
+      "name": "FT/v2/EyeLeftY",
+      "input": {
+        "address": "/avatar/parameters/FT/v2/EyeLeftY",
+        "type": "Float"
+      },
+      "output": {
+        "address": "/avatar/parameters/FT/v2/EyeLeftY",
+        "type": "Float"
+      }
+    },
+    {
+      "name": "FT/v2/EyeRightY",
+      "input": {
+        "address": "/avatar/parameters/FT/v2/EyeRightY",
+        "type": "Float"
+      },
+      "output": {
+        "address": "/avatar/parameters/FT/v2/EyeRightY",
+        "type": "Float"
+      }
+    },
+    {
       "name": "FT/v2/PupilDilation",
       "input": {
         "address": "/avatar/parameters/FT/v2/PupilDilation",
