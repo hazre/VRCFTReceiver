@@ -36,7 +36,7 @@ namespace VRCFTReceiver
 
         public static ValueStream<float> CreateStream(World world, string parameter)
         {
-            return world.LocalUser.GetStreamOrAdd<ValueStream<float>>(parameter, stream =>
+            var stream = world.LocalUser.GetStreamOrAdd<ValueStream<float>>(parameter, stream =>
             {
                 stream.Name = parameter;
                 stream.SetUpdatePeriod(0, 0);
@@ -45,6 +45,14 @@ namespace VRCFTReceiver
                 stream.FullFrameMin = -1;
                 stream.FullFrameMax = 1;
             });
+
+            if (world.LocalUser.Root != null)
+            {
+                var dvslot = world.LocalUser.Root.Slot.FindChildOrAdd("VRCFTReceiver", true);
+                CreateVariable(dvslot, parameter, stream);
+            }
+
+            return stream;
         }
 
         public static void CreateVariable(Slot dvslot, string parameter, ValueStream<float> stream)
@@ -61,6 +69,7 @@ namespace VRCFTReceiver
         {
             public static void Postfix(UserRoot __instance)
             {
+                Loader.Msg("Starting UserRoot");
                 if (!__instance.ActiveUser.IsLocalUser) return;
                 OSC.SendAvatarRequest(config.GetValue(KEY_IP), config.GetValue(KEY_SENDER_PORT));
 
