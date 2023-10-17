@@ -19,7 +19,7 @@ namespace VRCFTReceiver
 
         public override string Name => "VRCFTReceiver";
         public override string Author => "hazre";
-        public override string Version => "1.0.2";
+        public override string Version => "1.0.3";
         public override string Link => "https://github.com/hazre/VRCFTReceiver/";
 
         public override void OnEngineInit()
