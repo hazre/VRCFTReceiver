@@ -1,17 +1,16 @@
 ﻿using Elements.Core;
 using FrooxEngine;
-using System;
 using System.Collections.Generic;
 
 namespace VRCFTReceiver
 {
     // https://github.com/dfgHiatus/VRCFT-Module-Wrapper/blob/master/VRCFTModuleWrapper/EyeDevice.cs
-    internal class EyeDevice: IInputDriver
+    internal class EyeDevice : IInputDriver
     {
         private Eyes eyes;
         public int UpdateOrder => 100;
         public World focus;
-        Dictionary<string, float> eyeAttributes = new Dictionary<string, float>()
+        private Dictionary<string, float> eyeAttributes = new Dictionary<string, float>()
         {
             { "EyeLeftX", 0f },
             { "EyeLeftY", 0f },
@@ -26,7 +25,6 @@ namespace VRCFTReceiver
             { "EyeSquintRight", 0f }
         };
 
-
         public void CollectDeviceInfos(DataTreeList list)
         {
             DataTreeDictionary dataTreeDictionary = new DataTreeDictionary();
@@ -39,42 +37,44 @@ namespace VRCFTReceiver
         public void RegisterInputs(InputInterface inputInterface)
         {
             eyes = new Eyes(inputInterface, "VRCFT Eye Tracking");
-    }
+        }
 
         public void TryGetValue(string key)
         {
             try
             {
-                if (VRCFTOSC.VRCFTDictionary[focus].TryGetValue("/avatar/parameters/FT/v2/" + key, out var stream) && (stream != null))
+                if (focus != null && VRCFTOSC.VRCFTDictionary[focus].TryGetValue("/avatar/parameters/FT/v2/" + key, out var stream) && (stream != null))
                 {
                     eyeAttributes[key] = stream.Value;
                 }
             }
-            catch {}
+            catch { }
 
         }
 
         public void UpdateInputs(float deltaTime)
         {
+            UpdateEyesState();
+            UpdateEyesPositions();
+            eyes.ComputeCombinedEyeParameters();
+            eyes.FinishUpdate();
+        }
+
+        private void UpdateEyesState()
+        {
             eyes.IsEyeTrackingActive = Engine.Current.InputInterface.VR_Active;
             eyes.IsDeviceActive = Engine.Current.InputInterface.VR_Active;
-
             focus = Engine.Current.WorldManager?.FocusedWorld;
+        }
 
+        private void UpdateEyesPositions()
+        {
             if (focus != null)
             {
-
-                TryGetValue("EyeLeftX");
-                TryGetValue("EyeLeftY");
-                TryGetValue("EyeOpenLeft");
-                TryGetValue("EyeWideLeft");
-                TryGetValue("EyeSquintLeft");
-                TryGetValue("PupilDilation");
-                TryGetValue("EyeRightX");
-                TryGetValue("EyeRightY");
-                TryGetValue("EyeOpenRight");
-                TryGetValue("EyeWideRight");
-                TryGetValue("EyeSquintRight");
+                foreach (var key in eyeAttributes.Keys)
+                {
+                    TryGetValue(key);
+                }
 
                 UpdateEye(
                     eyes.LeftEye,
@@ -105,13 +105,7 @@ namespace VRCFTReceiver
                     (eyeAttributes["EyeSquintLeft"] + eyeAttributes["EyeSquintRight"]) / 2,
                     eyeAttributes["PupilDilation"]
                 );
-
-                eyes.ComputeCombinedEyeParameters();
-                eyes.FinishUpdate();
-
             }
-
-
         }
 
         private void UpdateEye(
@@ -132,7 +126,6 @@ namespace VRCFTReceiver
                 eye.UpdateWithDirection(Project2DTo3D(lookX, lookY));
                 eye.RawPosition = float3.Zero;
                 eye.PupilDiameter = dilation;
-
                 eye.Openness = openness;
                 eye.Widen = widen;
                 eye.Squeeze = squeeze;
