@@ -43,7 +43,7 @@ namespace VRCFTReceiver
         {
             try
             {
-                if (focus != null && VRCFTOSC.VRCFTDictionary[focus].TryGetValue("/avatar/parameters/FT/v2/" + key, out var stream) && (stream != null))
+                if (VRCFTOSC.VRCFTDictionary[focus].TryGetValue("/avatar/parameters/FT/v2/" + key, out var stream) && (stream != null))
                 {
                     eyeAttributes[key] = stream.Value;
                 }
@@ -71,7 +71,8 @@ namespace VRCFTReceiver
         {
             if (focus != null)
             {
-                foreach (var key in eyeAttributes.Keys)
+                var keys = new List<string>(eyeAttributes.Keys);
+                foreach (var key in keys)
                 {
                     TryGetValue(key);
                 }
@@ -133,6 +134,7 @@ namespace VRCFTReceiver
             }
         }
 
-        private float3 Project2DTo3D(float x, float y) => new float3(MathX.Tan(x), MathX.Tan(y), 1f).Normalized;
+        // assumes it's normalized on VRCFT end
+        private float3 Project2DTo3D(float x, float y) => new float3(x, y, 1f);
     }
 }
