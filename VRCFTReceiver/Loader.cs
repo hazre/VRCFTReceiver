@@ -25,7 +25,7 @@ namespace VRCFTReceiver
         public override void OnEngineInit()
         {
             config = GetConfiguration(); // Initialize config here
-            Harmony harmony = new Harmony("me.hazre.VRCFTReceiver");
+            Harmony harmony = new Harmony("dev.hazre.VRCFTReceiver");
             harmony.PatchAll();
 
             Engine.Current.OnReady += () =>
