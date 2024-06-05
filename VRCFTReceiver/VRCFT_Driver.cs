@@ -28,7 +28,13 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
-  private float3 _gazePoint;
+  private float _leftEyeX;
+
+  private float _leftEyeY;
+
+  private float _rightEyeX;
+
+  private float _rightEyeY;
 
   private float _leftOpenness;
 
@@ -40,7 +46,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _leftBrowLower;
 
+  private float _leftBrowPinch;
+
   private float _rightBrowLower;
+
+  private float _rightBrowPinch;
 
   private float _leftInnerBrowRaise;
 
@@ -56,7 +66,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _leftLipPull;
 
+  private float _leftLipSlant;
+
   private float _rightLipPull;
+
+  private float _rightLipSlant;
 
   private float _leftLipDepress;
 
@@ -74,9 +88,13 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _upperLipRaiserRight;
 
-  private float _puckerLeft;
+  private float _puckerLeftLower;
 
-  private float _puckerRight;
+  private float _puckerLeftUpper;
+
+  private float _puckerRightLower;
+
+  private float _puckerRightUpper;
 
   private float _cheekPuffLeft;
 
@@ -110,11 +128,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _tongueOut;
 
-  private float _tongueRetreat;
+  private float _mouthUpperX;
 
-  private float _mouthLeft;
-
-  private float _mouthRight;
+  private float _mouthLowerX;
 
   private float _noseWrinkleLeft;
 
@@ -229,14 +245,29 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     }
     eyes.IsEyeTrackingActive = input.VR_Active;
     eyes.SetTracking(state: true);
+
+    float radius = 2.0f;
+
+    float3 leftGazeVector = new float3(
+      radius * MathX.Sin(_leftEyeY) * MathX.Cos(_leftEyeX),
+      radius * MathX.Sin(_leftEyeY) * MathX.Sin(_leftEyeX),
+      radius * MathX.Cos(_leftEyeY)
+    );
+
+    float3 rightGazeVector = new float3(
+      radius * MathX.Sin(_rightEyeY) * MathX.Cos(_leftEyeX),
+      radius * MathX.Sin(_rightEyeY) * MathX.Sin(_leftEyeX),
+      radius * MathX.Cos(_rightEyeY)
+    );
+
     float3 v = float3.Left;
     float3 v2 = v * 0.065f;
     float3 b = v2 * 0.5f;
     v = float3.Right;
     v2 = v * 0.065f;
     float3 b2 = v2 * 0.5f;
-    float3 direction = (_gazePoint - b).Normalized;
-    float3 direction2 = (_gazePoint - b2).Normalized;
+    float3 direction = (leftGazeVector - b).Normalized;
+    float3 direction2 = (rightGazeVector - b2).Normalized;
     eyes.LeftEye.UpdateWithDirection(in direction);
     eyes.RightEye.UpdateWithDirection(in direction2);
     eyes.LeftEye.Openness = _leftOpenness;
@@ -245,10 +276,12 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     eyes.RightEye.Widen = _rightLidRaise;
     eyes.LeftEye.Squeeze = _leftLidTighter;
     eyes.RightEye.Squeeze = _rightLidTighter;
-    eyes.LeftEye.InnerBrowVertical = _leftInnerBrowRaise - _leftBrowLower;
-    eyes.LeftEye.OuterBrowVertical = _leftOuterBrowRaise - _leftBrowLower;
-    eyes.RightEye.InnerBrowVertical = _rightInnerBrowRaise - _rightBrowLower;
-    eyes.RightEye.OuterBrowVertical = _rightOuterBrowRaise - _rightBrowLower;
+    float _leftBrowLowerer = _leftBrowPinch - _leftBrowLower;
+    eyes.LeftEye.InnerBrowVertical = _leftInnerBrowRaise - _leftBrowLowerer;
+    eyes.LeftEye.OuterBrowVertical = _leftOuterBrowRaise - _leftBrowLowerer;
+    float _rightBrowLowerer = _rightBrowPinch - _rightBrowLower;
+    eyes.RightEye.InnerBrowVertical = _rightInnerBrowRaise - _rightBrowLowerer;
+    eyes.RightEye.OuterBrowVertical = _rightOuterBrowRaise - _rightBrowLowerer;
     eyes.ComputeCombinedEyeParameters();
     eyes.FinishUpdate();
   }
@@ -262,8 +295,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     //   return;
     // }
     mouth.IsTracking = true;
-    mouth.MouthLeftSmileFrown = _leftLipPull - _leftLipDepress;
-    mouth.MouthRightSmileFrown = _rightLipPull - _rightLipDepress;
+    float _leftLipCornerPuller = _leftLipPull - _leftLipSlant;
+    mouth.MouthLeftSmileFrown = _leftLipCornerPuller - _leftLipDepress;
+    float _rightLipCornerPuller = _rightLipPull - _rightLipSlant;
+    mouth.MouthRightSmileFrown = _rightLipCornerPuller - _rightLipDepress;
     mouth.MouthLeftDimple = _leftDimple;
     mouth.MouthRightDimple = _rightDimple;
     mouth.CheekLeftPuffSuck = _cheekPuffLeft - _cheekSuckLeft;
@@ -274,10 +309,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.LipUpperRightRaise = _upperLipRaiserRight;
     mouth.LipLowerLeftRaise = _lowerLipDepressLeft;
     mouth.LipLowerRightRaise = _lowerLipDepressRight;
-    mouth.MouthPoutLeft = _puckerLeft;
-    mouth.MouthPoutRight = _puckerRight;
-    mouth.LipUpperHorizontal = _mouthRight - _mouthLeft;
-    mouth.LipLowerHorizontal = mouth.LipUpperHorizontal;
+    mouth.MouthPoutLeft = _puckerLeftLower - _puckerLeftUpper;
+    mouth.MouthPoutRight = _puckerRightLower - _puckerRightUpper;
+    mouth.LipUpperHorizontal = _mouthUpperX;
+    mouth.LipLowerHorizontal = _mouthLowerX;
     mouth.LipTopLeftOverturn = _lipFunnelLT;
     mouth.LipTopRightOverturn = _lipFunnelRT;
     mouth.LipBottomLeftOverturn = _lipFunnelLB;
@@ -292,7 +327,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.LipsRightPress = _lipPressR;
     mouth.Jaw = new float3(_jawRight - _jawLeft, 0f - _lipsToward, _jawThrust);
     mouth.JawOpen = MathX.Clamp01(_jawDrop - _lipsToward);
-    mouth.Tongue = new float3(0f, 0f, _tongueOut - _tongueRetreat);
+    // removed _tongueRetreat, it's not part of UE
+    // TODO: add rest of tongue parameters
+    mouth.Tongue = new float3(0f, 0f, _tongueOut);
     mouth.NoseWrinkleLeft = _noseWrinkleLeft;
     mouth.NoseWrinkleRight = _noseWrinkleRight;
     mouth.ChinRaiseBottom = _chinRaiseBottom;
@@ -309,427 +346,253 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     switch (address.Length)
     {
       case 24:
-        switch (address[15])
-        {
-          case 'L':
-            switch (address)
-            {
-              // case "/sl/xrfb/facec/LowerFace":
-              //   if (ReadFloat(message) > 0.5f)
-              //   {
-              //     lastFaceTracking = DateTime.UtcNow;
-              //   }
-              //   else
-              //   {
-              //     lastFaceTracking = null;
-              //   }
-              //   break;
-              case "/sl/xrfb/facew/LipSuckLB":
-                _lipSuckLB = ReadFloat(message);
-                break;
-              case "/sl/xrfb/facew/LipSuckRB":
-                _lipSuckRB = ReadFloat(message);
-                break;
-              case "/sl/xrfb/facew/LipSuckLT":
-                _lipSuckLT = ReadFloat(message);
-                break;
-              case "/sl/xrfb/facew/LipSuckRT":
-                _lipSuckRT = ReadFloat(message);
-                break;
-            }
-            break;
-          case 'U':
-            if (address == "/sl/xrfb/facec/UpperFace")
-            {
-              if (ReadFloat(message) > 0.5f)
-              {
-                lastEyeTracking = DateTime.UtcNow;
-              }
-              else
-              {
-                lastEyeTracking = null;
-              }
-            }
-            break;
-          case 'J':
-            if (address == "/sl/xrfb/facew/JawThrust")
-            {
-              _jawThrust = ReadFloat(message);
-            }
-            break;
-          case 'T':
-            if (address == "/sl/xrfb/facew/ToungeOut")
-            {
-              _tongueOut = ReadFloat(message);
-            }
-            break;
-          case 'M':
-            if (address == "/sl/xrfb/facew/MouthLeft")
-            {
-              _mouthLeft = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 23:
-        switch (address[22])
-        {
-          case 't':
-            if (address == "/sl/eyeTrackedGazePoint")
-            {
-              float3 a = ReadFloat3(message);
-              float3 b = new float3(1f, 1f, -1f);
-              _gazePoint = a * b;
-            }
-            break;
-          case 'L':
-            if (address == "/sl/xrfb/facew/DimplerL")
-            {
-              _leftDimple = ReadFloat(message);
-            }
-            break;
-          case 'R':
-            if (address == "/sl/xrfb/facew/DimplerR")
-            {
-              _rightDimple = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 26:
         switch (address[25])
         {
           case 'L':
-            if (!(address == "/sl/xrfb/facew/EyesClosedL"))
-            {
-              if (address == "/sl/xrfb/facew/LipPressorL")
-              {
-                _lipPressL = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftOpenness = 1f - MathX.Sqrt(ReadFloat(message));
-            }
-            break;
-          case 'R':
-            if (!(address == "/sl/xrfb/facew/EyesClosedR"))
-            {
-              if (address == "/sl/xrfb/facew/LipPressorR")
-              {
-                _lipPressR = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _rightOpenness = 1f - MathX.Sqrt(ReadFloat(message));
-            }
-            break;
-          case 'B':
-            if (address == "/sl/xrfb/facew/ChinRaiserB")
-            {
-              _chinRaiseBottom = ReadFloat(message);
-            }
-            break;
-          case 'T':
-            if (address == "/sl/xrfb/facew/ChinRaiserT")
-            {
-              _chinRaiseTop = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 25:
-        switch (address[20])
-        {
-          case 'P':
-            if (!(address == "/sl/xrfb/facew/CheekPuffL"))
-            {
-              if (address == "/sl/xrfb/facew/CheekPuffR")
-              {
-                _cheekPuffRight = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _cheekPuffLeft = ReadFloat(message);
-            }
-            break;
-          case 'S':
-            if (!(address == "/sl/xrfb/facew/CheekSuckL"))
-            {
-              if (address == "/sl/xrfb/facew/CheekSuckR")
-              {
-                _cheekSuckRight = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _cheekSuckLeft = ReadFloat(message);
-            }
-            break;
-          case 'o':
-            if (address == "/sl/xrfb/facew/LipsToward")
-            {
-              _lipsToward = ReadFloat(message);
-            }
-            break;
-          case 'c':
-            if (!(address == "/sl/xrfb/facew/LipPuckerL"))
-            {
-              if (address == "/sl/xrfb/facew/LipPuckerR")
-              {
-                _puckerRight = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _puckerLeft = ReadFloat(message);
-            }
-            break;
-          case 'R':
-            if (address == "/sl/xrfb/facew/MouthRight")
-            {
-              _mouthRight = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 27:
-        switch (address[15])
-        {
-          case 'C':
-            if (!(address == "/sl/xrfb/facew/CheekRaiserL"))
-            {
-              if (address == "/sl/xrfb/facew/CheekRaiserR")
-              {
-                _cheekRightRaise = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _cheekLeftRaise = ReadFloat(message);
-            }
-            break;
-          case 'B':
-            if (!(address == "/sl/xrfb/facew/BrowLowererL"))
-            {
-              if (address == "/sl/xrfb/facew/BrowLowererR")
-              {
-                _rightBrowLower = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftBrowLower = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 30:
-        switch (address[22])
-        {
-          case 'w':
-            if (address == "/sl/xrfb/facew/JawSidewaysLeft")
-            {
-              _jawLeft = ReadFloat(message);
-            }
-            break;
-          case 'd':
-            if (!(address == "/sl/xrfb/facew/UpperLidRaiserL"))
-            {
-              if (address == "/sl/xrfb/facew/UpperLidRaiserR")
-              {
-                _rightLidRaise = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftLidRaise = ReadFloat(message);
-            }
-            break;
-          case 'p':
-            if (!(address == "/sl/xrfb/facew/UpperLipRaiserL"))
-            {
-              if (address == "/sl/xrfb/facew/UpperLipRaiserR")
-              {
-                _upperLipRaiserRight = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _upperLipRaiserLeft = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 31:
-        switch (address[15])
-        {
-          case 'J':
-            if (address == "/sl/xrfb/facew/JawSidewaysRight")
-            {
-              _jawRight = ReadFloat(message);
-            }
-            break;
-          case 'L':
-            if (!(address == "/sl/xrfb/facew/LipCornerPullerL"))
-            {
-              if (address == "/sl/xrfb/facew/LipCornerPullerR")
-              {
-                _rightLipPull = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftLipPull = ReadFloat(message);
-            }
-            break;
-          case 'I':
-            if (!(address == "/sl/xrfb/facew/InnerBrowRaiserL"))
-            {
-              if (address == "/sl/xrfb/facew/InnerBrowRaiserR")
-              {
-                _rightInnerBrowRaise = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftInnerBrowRaise = ReadFloat(message);
-            }
-            break;
-          case 'O':
-            if (!(address == "/sl/xrfb/facew/OuterBrowRaiserL"))
-            {
-              if (address == "/sl/xrfb/facew/OuterBrowRaiserR")
-              {
-                _rightOuterBrowRaise = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _leftOuterBrowRaise = ReadFloat(message);
-            }
-            break;
-          case 'K':
-          case 'M':
-          case 'N':
-            break;
-        }
-        break;
-      case 28:
-        switch (address[18])
-        {
-          case 'g':
-            if (address == "/sl/xrfb/facew/TongueRetreat")
-            {
-              _tongueRetreat = ReadFloat(message);
-            }
-            break;
-          case 'e':
-            if (!(address == "/sl/xrfb/facew/NoseWrinklerL"))
-            {
-              if (address == "/sl/xrfb/facew/NoseWrinklerR")
-              {
-                _noseWrinkleRight = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _noseWrinkleLeft = ReadFloat(message);
-            }
-            break;
-          case 'F':
             switch (address)
             {
-              case "/sl/xrfb/facew/LipFunnelerLB":
+              case "/avatar/parameters/FT/v2/LipSuckLowerLeft":
+                _lipSuckLB = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipSuckLowerRight":
+                _lipSuckRB = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipSuckUpperLeft":
+                _lipSuckLT = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipSuckUpperRight":
+                _lipSuckRT = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipPuckerLowerLeft":
+                _puckerLeftLower = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipPuckerUpperLeft":
+                _puckerLeftUpper = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipPuckerLowerRight":
+                _puckerRightLower = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipPuckerUpperRight":
+                _puckerRightUpper = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipFunnelLowerLeft":
                 _lipFunnelLB = ReadFloat(message);
                 break;
-              case "/sl/xrfb/facew/LipFunnelerRB":
-                _lipFunnelRB = ReadFloat(message);
-                break;
-              case "/sl/xrfb/facew/LipFunnelerLT":
+              case "/avatar/parameters/FT/v2/LipFunnelUpperLeft":
                 _lipFunnelLT = ReadFloat(message);
                 break;
-              case "/sl/xrfb/facew/LipFunnelerRT":
+              case "/avatar/parameters/FT/v2/LipFunnelLowerRight":
+                _lipFunnelRB = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/LipFunnelUpperRight":
                 _lipFunnelRT = ReadFloat(message);
                 break;
             }
             break;
-          case 'S':
-            if (!(address == "/sl/xrfb/facew/LipStretcherL"))
+          case 'J':
+            switch (address)
             {
-              if (address == "/sl/xrfb/facew/LipStretcherR")
-              {
-                _lipStretchR = ReadFloat(message);
-              }
-            }
-            else
-            {
-              _lipStretchL = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/JawForward":
+                _jawThrust = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/JawLeft":
+                _jawLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/JawRight":
+                _jawRight = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/JawOpen":
+                _jawDrop = ReadFloat(message);
+                break;
             }
             break;
+          // TODO: add rest of tongue parameters
           case 'T':
             switch (address)
             {
-              case "/sl/xrfb/facew/LipTightenerL":
+              case "/avatar/parameters/FT/v2/TongueOut":
+                _tongueOut = ReadFloat(message);
+                break;
+            }
+            break;
+          case 'M':
+            switch (address)
+            {
+              case "/avatar/parameters/FT/v2/MouthUpperX":
+                _mouthUpperX = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthLowerX":
+                _mouthLowerX = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthPressLeft":
+                _lipPressL = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthPressRight":
+                _lipPressR = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthRaiserLower":
+                _chinRaiseBottom = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthRaiserUpper":
+                _chinRaiseTop = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthClosed":
+                _lipsToward = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthUpperUpLeft":
+                _upperLipRaiserLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthUpperUpRight":
+                _upperLipRaiserRight = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthCornerPullLeft":
+                _leftLipPull = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthCornerSlantLeft":
+                _leftLipSlant = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthCornerPullRight":
+                _rightLipPull = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthCornerSlantRight":
+                _rightLipSlant = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthStretchLeft":
+                _lipStretchL = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthStretchRight":
+                _lipStretchR = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthTightenerLeft":
                 _lipTightenL = ReadFloat(message);
                 break;
-              case "/sl/xrfb/facew/LipTightenerR":
+              case "/avatar/parameters/FT/v2/MouthTightenerRight":
                 _lipTightenR = ReadFloat(message);
                 break;
-              case "/sl/xrfb/facew/LidTightenerL":
+              case "/avatar/parameters/FT/v2/MouthFrownLeft":
+                _leftLipDepress = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthFrownRight":
+                _rightLipDepress = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthLowerDownLeft":
+                _lowerLipDepressLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthLowerDownRight":
+                _lowerLipDepressRight = ReadFloat(message);
+                break;
+            }
+            break;
+          case 'E':
+            switch (address)
+            {
+              case "/avatar/parameters/FT/v2/EyeLeftX":
+                _leftEyeX = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeLeftY":
+                _leftEyeY = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeRightX":
+                _rightEyeX = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeRightY":
+                _rightEyeY = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeOpenLeft":
+                _leftOpenness = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeOpenRight":
+                _leftOpenness = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeWideLeft":
+                _leftLidRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeWideRight":
+                _rightLidRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/EyeSquintLeft":
                 _leftLidTighter = ReadFloat(message);
                 break;
-              case "/sl/xrfb/facew/LidTightenerR":
+              case "/avatar/parameters/FT/v2/EyeSquintRight":
                 _rightLidTighter = ReadFloat(message);
                 break;
             }
             break;
-        }
-        break;
-      case 34:
-        switch (address[33])
-        {
-          case 'L':
-            if (address == "/sl/xrfb/facew/LipCornerDepressorL")
+          case 'D':
+            switch (address)
             {
-              _leftLipDepress = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/MouthDimpleLeft":
+                _leftDimple = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/MouthDimpleRight":
+                _rightDimple = ReadFloat(message);
+                break;
             }
             break;
-          case 'R':
-            if (address == "/sl/xrfb/facew/LipCornerDepressorR")
+          case 'C':
+            switch (address)
             {
-              _rightLipDepress = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/CheekPuffLeft":
+                _cheekPuffRight = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/CheekPuffRight":
+                _cheekPuffLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/CheekSuckLeft":
+                _cheekSuckRight = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/CheekSuckRight":
+                _cheekSuckLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/CheekSquintLeft":
+                _cheekLeftRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/CheekSquintRight":
+                _cheekRightRaise = ReadFloat(message);
+                break;
+            }
+            break;
+          case 'B':
+            switch (address)
+            {
+              case "/avatar/parameters/FT/v2/BrowPinchLeft":
+                _leftBrowPinch = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowLowererLeft":
+                _leftBrowLower = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowPinchRight":
+                _rightBrowPinch = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowLowererRight":
+                _rightBrowLower = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowInnerUpLeft":
+                _leftInnerBrowRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowInnerUpRight":
+                _rightInnerBrowRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowOuterUpLeft":
+                _leftOuterBrowRaise = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/BrowOuterUpRight":
+                _rightOuterBrowRaise = ReadFloat(message);
+                break;
+            }
+            break;
+          case 'N':
+            switch (address)
+            {
+              case "/avatar/parameters/FT/v2/NoseSneerLeft":
+                _noseWrinkleLeft = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/NoseSneerRight":
+                _noseWrinkleRight = ReadFloat(message);
+                break;
             }
             break;
         }
-        break;
-      case 33:
-        switch (address[32])
-        {
-          case 'L':
-            if (address == "/sl/xrfb/facew/LowerLipDepressorL")
-            {
-              _lowerLipDepressLeft = ReadFloat(message);
-            }
-            break;
-          case 'R':
-            if (address == "/sl/xrfb/facew/LowerLipDepressorR")
-            {
-              _lowerLipDepressRight = ReadFloat(message);
-            }
-            break;
-        }
-        break;
-      case 22:
-        if (address == "/sl/xrfb/facew/JawDrop")
-        {
-          _jawDrop = ReadFloat(message);
-        }
-        break;
-      case 29:
-      case 32:
         break;
     }
   }
