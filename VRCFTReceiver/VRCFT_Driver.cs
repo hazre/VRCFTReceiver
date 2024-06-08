@@ -28,137 +28,137 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
-  private float _leftEyeX;
+  private float _EyeLeftX;
 
-  private float _leftEyeY;
+  private float _EyeLeftY;
 
-  private float _rightEyeX;
+  private float _EyeRightX;
 
-  private float _rightEyeY;
+  private float _EyeRightY;
 
-  private float _leftOpenness;
+  private float _EyeOpenLeft;
 
-  private float _rightOpenness;
+  private float _EyeOpenRight;
 
-  private float _leftLidRaise;
+  private float _EyeWideLeft;
 
-  private float _rightLidRaise;
+  private float _EyeWideRight;
 
-  private float _leftBrowLower;
+  private float _BrowLowererLeft;
 
-  private float _leftBrowPinch;
+  private float _BrowPinchLeft;
 
-  private float _rightBrowLower;
+  private float _BrowLowererRight;
 
-  private float _rightBrowPinch;
+  private float _BrowPinchRight;
 
-  private float _leftInnerBrowRaise;
+  private float _BrowInnerUpLeft;
 
-  private float _rightInnerBrowRaise;
+  private float _BrowInnerUpRight;
 
-  private float _leftOuterBrowRaise;
+  private float _BrowOuterUpLeft;
 
-  private float _rightOuterBrowRaise;
+  private float _BrowOuterUpRight;
 
-  private float _leftLidTighter;
+  private float _EyeSquintLeft;
 
-  private float _rightLidTighter;
+  private float _EyeSquintRight;
 
-  private float _leftLipPull;
+  private float _MouthCornerPullLeft;
 
-  private float _leftLipSlant;
+  private float _MouthCornerSlantLeft;
 
-  private float _rightLipPull;
+  private float _MouthCornerPullRight;
 
-  private float _rightLipSlant;
+  private float _MouthCornerSlantRight;
 
-  private float _leftLipDepress;
+  private float _MouthFrownLeft;
 
-  private float _rightLipDepress;
+  private float _MouthFrownRight;
 
-  private float _leftDimple;
+  private float _MouthDimpleLeft;
 
-  private float _rightDimple;
+  private float _MouthDimpleRight;
 
-  private float _lowerLipDepressLeft;
+  private float _MouthLowerDownLeft;
 
-  private float _lowerLipDepressRight;
+  private float _MouthLowerDownRight;
 
-  private float _upperLipRaiserLeft;
+  private float _MouthUpperUpLeft;
 
-  private float _upperLipRaiserRight;
+  private float _MouthUpperUpRight;
 
-  private float _puckerLeftLower;
+  private float _LipPuckerLowerLeft;
 
-  private float _puckerLeftUpper;
+  private float _LipPuckerUpperLeft;
 
-  private float _puckerRightLower;
+  private float _LipPuckerLowerRight;
 
-  private float _puckerRightUpper;
+  private float _LipPuckerUpperRight;
 
-  private float _cheekPuffLeft;
+  private float _CheekPuffLeft;
 
-  private float _cheekSuckLeft;
+  private float _CheekSuckLeft;
 
-  private float _cheekPuffRight;
+  private float _CheekPuffRight;
 
-  private float _cheekSuckRight;
+  private float _CheekSuckRight;
 
-  private float _cheekLeftRaise;
+  private float _CheekSquintLeft;
 
-  private float _cheekRightRaise;
+  private float _CheekSquintRight;
 
-  private float _lipFunnelLB;
+  private float _LipFunnelLowerLeft;
 
-  private float _lipFunnelRB;
+  private float _LipFunnelLowerRight;
 
-  private float _lipFunnelLT;
+  private float _LipFunnelUpperLeft;
 
-  private float _lipFunnelRT;
+  private float _LipFunnelUpperRight;
 
-  private float _jawThrust;
+  private float _JawForward;
 
-  private float _jawDrop;
+  private float _JawOpen;
 
-  private float _jawLeft;
+  private float _JawLeft;
 
-  private float _jawRight;
+  private float _JawRight;
 
-  private float _lipsToward;
+  private float _MouthClosed;
 
-  private float _tongueOut;
+  private float _TongueOut;
 
-  private float _mouthUpperX;
+  private float _MouthUpperX;
 
-  private float _mouthLowerX;
+  private float _MouthLowerX;
 
-  private float _noseWrinkleLeft;
+  private float _NoseSneerLeft;
 
-  private float _noseWrinkleRight;
+  private float _NoseSneerRight;
 
-  private float _lipSuckLB;
+  private float _LipSuckLowerLeft;
 
-  private float _lipSuckRB;
+  private float _LipSuckLowerRight;
 
-  private float _lipSuckLT;
+  private float _LipSuckUpperLeft;
 
-  private float _lipSuckRT;
+  private float _LipSuckUpperRight;
 
-  private float _lipTightenL;
+  private float _MouthTightenerLeft;
 
-  private float _lipTightenR;
+  private float _MouthTightenerRight;
 
-  private float _lipStretchL;
+  private float _MouthStretchLeft;
 
-  private float _lipStretchR;
+  private float _MouthStretchRight;
 
-  private float _lipPressL;
+  private float _MouthPressLeft;
 
-  private float _lipPressR;
+  private float _MouthPressRight;
 
-  private float _chinRaiseBottom;
+  private float _MouthRaiserLower;
 
-  private float _chinRaiseTop;
+  private float _MouthRaiserUpper;
 
   public int UpdateOrder => 100;
 
@@ -249,15 +249,15 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     float radius = 2.0f;
 
     float3 leftGazeVector = new float3(
-      radius * MathX.Sin(_leftEyeY) * MathX.Cos(_leftEyeX),
-      radius * MathX.Sin(_leftEyeY) * MathX.Sin(_leftEyeX),
-      radius * MathX.Cos(_leftEyeY)
+      radius * MathX.Sin(_EyeLeftY) * MathX.Cos(_EyeLeftX),
+      radius * MathX.Sin(_EyeLeftY) * MathX.Sin(_EyeLeftX),
+      radius * MathX.Cos(_EyeLeftY)
     );
 
     float3 rightGazeVector = new float3(
-      radius * MathX.Sin(_rightEyeY) * MathX.Cos(_leftEyeX),
-      radius * MathX.Sin(_rightEyeY) * MathX.Sin(_leftEyeX),
-      radius * MathX.Cos(_rightEyeY)
+      radius * MathX.Sin(_EyeRightY) * MathX.Cos(_EyeLeftX),
+      radius * MathX.Sin(_EyeRightY) * MathX.Sin(_EyeLeftX),
+      radius * MathX.Cos(_EyeRightY)
     );
 
     float3 v = float3.Left;
@@ -270,18 +270,18 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     float3 direction2 = (rightGazeVector - b2).Normalized;
     eyes.LeftEye.UpdateWithDirection(in direction);
     eyes.RightEye.UpdateWithDirection(in direction2);
-    eyes.LeftEye.Openness = _leftOpenness;
-    eyes.RightEye.Openness = _rightOpenness;
-    eyes.LeftEye.Widen = _leftLidRaise;
-    eyes.RightEye.Widen = _rightLidRaise;
-    eyes.LeftEye.Squeeze = _leftLidTighter;
-    eyes.RightEye.Squeeze = _rightLidTighter;
-    float _leftBrowLowerer = _leftBrowPinch - _leftBrowLower;
-    eyes.LeftEye.InnerBrowVertical = _leftInnerBrowRaise - _leftBrowLowerer;
-    eyes.LeftEye.OuterBrowVertical = _leftOuterBrowRaise - _leftBrowLowerer;
-    float _rightBrowLowerer = _rightBrowPinch - _rightBrowLower;
-    eyes.RightEye.InnerBrowVertical = _rightInnerBrowRaise - _rightBrowLowerer;
-    eyes.RightEye.OuterBrowVertical = _rightOuterBrowRaise - _rightBrowLowerer;
+    eyes.LeftEye.Openness = _EyeOpenLeft;
+    eyes.RightEye.Openness = _EyeOpenRight;
+    eyes.LeftEye.Widen = _EyeWideLeft;
+    eyes.RightEye.Widen = _EyeWideRight;
+    eyes.LeftEye.Squeeze = _EyeSquintLeft;
+    eyes.RightEye.Squeeze = _EyeSquintRight;
+    float _leftBrowLowerer = _BrowPinchLeft - _BrowLowererLeft;
+    eyes.LeftEye.InnerBrowVertical = _BrowInnerUpLeft - _leftBrowLowerer;
+    eyes.LeftEye.OuterBrowVertical = _BrowOuterUpLeft - _leftBrowLowerer;
+    float _rightBrowLowerer = _BrowPinchRight - _BrowLowererRight;
+    eyes.RightEye.InnerBrowVertical = _BrowInnerUpRight - _rightBrowLowerer;
+    eyes.RightEye.OuterBrowVertical = _BrowOuterUpRight - _rightBrowLowerer;
     eyes.ComputeCombinedEyeParameters();
     eyes.FinishUpdate();
   }
@@ -295,45 +295,45 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     //   return;
     // }
     mouth.IsTracking = true;
-    float _leftLipCornerPuller = _leftLipPull - _leftLipSlant;
-    mouth.MouthLeftSmileFrown = _leftLipCornerPuller - _leftLipDepress;
-    float _rightLipCornerPuller = _rightLipPull - _rightLipSlant;
-    mouth.MouthRightSmileFrown = _rightLipCornerPuller - _rightLipDepress;
-    mouth.MouthLeftDimple = _leftDimple;
-    mouth.MouthRightDimple = _rightDimple;
-    mouth.CheekLeftPuffSuck = _cheekPuffLeft - _cheekSuckLeft;
-    mouth.CheekRightPuffSuck = _cheekPuffRight - _cheekSuckRight;
-    mouth.CheekLeftRaise = _cheekLeftRaise;
-    mouth.CheekRightRaise = _cheekRightRaise;
-    mouth.LipUpperLeftRaise = _upperLipRaiserLeft;
-    mouth.LipUpperRightRaise = _upperLipRaiserRight;
-    mouth.LipLowerLeftRaise = _lowerLipDepressLeft;
-    mouth.LipLowerRightRaise = _lowerLipDepressRight;
-    mouth.MouthPoutLeft = _puckerLeftLower - _puckerLeftUpper;
-    mouth.MouthPoutRight = _puckerRightLower - _puckerRightUpper;
-    mouth.LipUpperHorizontal = _mouthUpperX;
-    mouth.LipLowerHorizontal = _mouthLowerX;
-    mouth.LipTopLeftOverturn = _lipFunnelLT;
-    mouth.LipTopRightOverturn = _lipFunnelRT;
-    mouth.LipBottomLeftOverturn = _lipFunnelLB;
-    mouth.LipBottomRightOverturn = _lipFunnelRB;
-    mouth.LipTopLeftOverUnder = 0f - _lipSuckLT;
-    mouth.LipTopRightOverUnder = 0f - _lipSuckRT;
-    mouth.LipBottomLeftOverUnder = 0f - _lipSuckLB;
-    mouth.LipBottomRightOverUnder = 0f - _lipSuckRB;
-    mouth.LipLeftStretchTighten = _lipStretchL - _lipTightenL;
-    mouth.LipRightStretchTighten = _lipStretchR - _lipTightenR;
-    mouth.LipsLeftPress = _lipPressL;
-    mouth.LipsRightPress = _lipPressR;
-    mouth.Jaw = new float3(_jawRight - _jawLeft, 0f - _lipsToward, _jawThrust);
-    mouth.JawOpen = MathX.Clamp01(_jawDrop - _lipsToward);
+    float MouthSmileLeft = _MouthCornerPullLeft - _MouthCornerSlantLeft;
+    mouth.MouthLeftSmileFrown = MouthSmileLeft - _MouthFrownLeft;
+    float MouthSmileRight = _MouthCornerPullRight - _MouthCornerSlantRight;
+    mouth.MouthRightSmileFrown = MouthSmileRight - _MouthFrownRight;
+    mouth.MouthLeftDimple = _MouthDimpleLeft;
+    mouth.MouthRightDimple = _MouthDimpleRight;
+    mouth.CheekLeftPuffSuck = _CheekPuffLeft - _CheekSuckLeft;
+    mouth.CheekRightPuffSuck = _CheekPuffRight - _CheekSuckRight;
+    mouth.CheekLeftRaise = _CheekSquintLeft;
+    mouth.CheekRightRaise = _CheekSquintRight;
+    mouth.LipUpperLeftRaise = _MouthUpperUpLeft;
+    mouth.LipUpperRightRaise = _MouthUpperUpRight;
+    mouth.LipLowerLeftRaise = _MouthLowerDownLeft;
+    mouth.LipLowerRightRaise = _MouthLowerDownRight;
+    mouth.MouthPoutLeft = _LipPuckerLowerLeft - _LipPuckerUpperLeft;
+    mouth.MouthPoutRight = _LipPuckerLowerRight - _LipPuckerUpperRight;
+    mouth.LipUpperHorizontal = _MouthUpperX;
+    mouth.LipLowerHorizontal = _MouthLowerX;
+    mouth.LipTopLeftOverturn = _LipFunnelUpperLeft;
+    mouth.LipTopRightOverturn = _LipFunnelUpperRight;
+    mouth.LipBottomLeftOverturn = _LipFunnelLowerLeft;
+    mouth.LipBottomRightOverturn = _LipFunnelLowerRight;
+    mouth.LipTopLeftOverUnder = 0f - _LipSuckUpperLeft;
+    mouth.LipTopRightOverUnder = 0f - _LipSuckUpperRight;
+    mouth.LipBottomLeftOverUnder = 0f - _LipSuckLowerLeft;
+    mouth.LipBottomRightOverUnder = 0f - _LipSuckLowerRight;
+    mouth.LipLeftStretchTighten = _MouthStretchLeft - _MouthTightenerLeft;
+    mouth.LipRightStretchTighten = _MouthStretchRight - _MouthTightenerRight;
+    mouth.LipsLeftPress = _MouthPressLeft;
+    mouth.LipsRightPress = _MouthPressRight;
+    mouth.Jaw = new float3(_JawRight - _JawLeft, 0f - _MouthClosed, _JawForward);
+    mouth.JawOpen = MathX.Clamp01(_JawOpen - _MouthClosed);
     // removed _tongueRetreat, it's not part of UE
     // TODO: add rest of tongue parameters
-    mouth.Tongue = new float3(0f, 0f, _tongueOut);
-    mouth.NoseWrinkleLeft = _noseWrinkleLeft;
-    mouth.NoseWrinkleRight = _noseWrinkleRight;
-    mouth.ChinRaiseBottom = _chinRaiseBottom;
-    mouth.ChinRaiseTop = _chinRaiseTop;
+    mouth.Tongue = new float3(0f, 0f, _TongueOut);
+    mouth.NoseWrinkleLeft = _NoseSneerLeft;
+    mouth.NoseWrinkleRight = _NoseSneerRight;
+    mouth.ChinRaiseBottom = _MouthRaiserLower;
+    mouth.ChinRaiseTop = _MouthRaiserUpper;
   }
 
   private void UpdateData(OscMessage message)
@@ -352,40 +352,40 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/LipSuckLowerLeft":
-                _lipSuckLB = ReadFloat(message);
+                _LipSuckLowerLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipSuckLowerRight":
-                _lipSuckRB = ReadFloat(message);
+                _LipSuckLowerRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipSuckUpperLeft":
-                _lipSuckLT = ReadFloat(message);
+                _LipSuckUpperLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipSuckUpperRight":
-                _lipSuckRT = ReadFloat(message);
+                _LipSuckUpperRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipPuckerLowerLeft":
-                _puckerLeftLower = ReadFloat(message);
+                _LipPuckerLowerLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipPuckerUpperLeft":
-                _puckerLeftUpper = ReadFloat(message);
+                _LipPuckerUpperLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipPuckerLowerRight":
-                _puckerRightLower = ReadFloat(message);
+                _LipPuckerLowerRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipPuckerUpperRight":
-                _puckerRightUpper = ReadFloat(message);
+                _LipPuckerUpperRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipFunnelLowerLeft":
-                _lipFunnelLB = ReadFloat(message);
+                _LipFunnelLowerLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipFunnelUpperLeft":
-                _lipFunnelLT = ReadFloat(message);
+                _LipFunnelUpperLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipFunnelLowerRight":
-                _lipFunnelRB = ReadFloat(message);
+                _LipFunnelLowerRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/LipFunnelUpperRight":
-                _lipFunnelRT = ReadFloat(message);
+                _LipFunnelUpperRight = ReadFloat(message);
                 break;
             }
             break;
@@ -393,16 +393,16 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/JawForward":
-                _jawThrust = ReadFloat(message);
+                _JawForward = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/JawLeft":
-                _jawLeft = ReadFloat(message);
+                _JawLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/JawRight":
-                _jawRight = ReadFloat(message);
+                _JawRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/JawOpen":
-                _jawDrop = ReadFloat(message);
+                _JawOpen = ReadFloat(message);
                 break;
             }
             break;
@@ -411,7 +411,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/TongueOut":
-                _tongueOut = ReadFloat(message);
+                _TongueOut = ReadFloat(message);
                 break;
             }
             break;
@@ -419,67 +419,67 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/MouthUpperX":
-                _mouthUpperX = ReadFloat(message);
+                _MouthUpperX = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthLowerX":
-                _mouthLowerX = ReadFloat(message);
+                _MouthLowerX = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthPressLeft":
-                _lipPressL = ReadFloat(message);
+                _MouthPressLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthPressRight":
-                _lipPressR = ReadFloat(message);
+                _MouthPressRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthRaiserLower":
-                _chinRaiseBottom = ReadFloat(message);
+                _MouthRaiserLower = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthRaiserUpper":
-                _chinRaiseTop = ReadFloat(message);
+                _MouthRaiserUpper = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthClosed":
-                _lipsToward = ReadFloat(message);
+                _MouthClosed = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthUpperUpLeft":
-                _upperLipRaiserLeft = ReadFloat(message);
+                _MouthUpperUpLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthUpperUpRight":
-                _upperLipRaiserRight = ReadFloat(message);
+                _MouthUpperUpRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthCornerPullLeft":
-                _leftLipPull = ReadFloat(message);
+                _MouthCornerPullLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthCornerSlantLeft":
-                _leftLipSlant = ReadFloat(message);
+                _MouthCornerSlantLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthCornerPullRight":
-                _rightLipPull = ReadFloat(message);
+                _MouthCornerPullRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthCornerSlantRight":
-                _rightLipSlant = ReadFloat(message);
+                _MouthCornerSlantRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthStretchLeft":
-                _lipStretchL = ReadFloat(message);
+                _MouthStretchLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthStretchRight":
-                _lipStretchR = ReadFloat(message);
+                _MouthStretchRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthTightenerLeft":
-                _lipTightenL = ReadFloat(message);
+                _MouthTightenerLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthTightenerRight":
-                _lipTightenR = ReadFloat(message);
+                _MouthTightenerRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthFrownLeft":
-                _leftLipDepress = ReadFloat(message);
+                _MouthFrownLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthFrownRight":
-                _rightLipDepress = ReadFloat(message);
+                _MouthFrownRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthLowerDownLeft":
-                _lowerLipDepressLeft = ReadFloat(message);
+                _MouthLowerDownLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthLowerDownRight":
-                _lowerLipDepressRight = ReadFloat(message);
+                _MouthLowerDownRight = ReadFloat(message);
                 break;
             }
             break;
@@ -487,34 +487,34 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/EyeLeftX":
-                _leftEyeX = ReadFloat(message);
+                _EyeLeftX = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeLeftY":
-                _leftEyeY = ReadFloat(message);
+                _EyeLeftY = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeRightX":
-                _rightEyeX = ReadFloat(message);
+                _EyeRightX = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeRightY":
-                _rightEyeY = ReadFloat(message);
+                _EyeRightY = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeOpenLeft":
-                _leftOpenness = ReadFloat(message);
+                _EyeOpenLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeOpenRight":
-                _leftOpenness = ReadFloat(message);
+                _EyeOpenRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeWideLeft":
-                _leftLidRaise = ReadFloat(message);
+                _EyeWideLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeWideRight":
-                _rightLidRaise = ReadFloat(message);
+                _EyeWideRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeSquintLeft":
-                _leftLidTighter = ReadFloat(message);
+                _EyeSquintLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/EyeSquintRight":
-                _rightLidTighter = ReadFloat(message);
+                _EyeSquintRight = ReadFloat(message);
                 break;
             }
             break;
@@ -522,10 +522,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/MouthDimpleLeft":
-                _leftDimple = ReadFloat(message);
+                _MouthDimpleLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthDimpleRight":
-                _rightDimple = ReadFloat(message);
+                _MouthDimpleRight = ReadFloat(message);
                 break;
             }
             break;
@@ -533,22 +533,22 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/CheekPuffLeft":
-                _cheekPuffRight = ReadFloat(message);
+                _CheekPuffLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekPuffRight":
-                _cheekPuffLeft = ReadFloat(message);
+                _CheekPuffRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekSuckLeft":
-                _cheekSuckRight = ReadFloat(message);
+                _CheekSuckLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekSuckRight":
-                _cheekSuckLeft = ReadFloat(message);
+                _CheekSuckRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekSquintLeft":
-                _cheekLeftRaise = ReadFloat(message);
+                _CheekSquintLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekSquintRight":
-                _cheekRightRaise = ReadFloat(message);
+                _CheekSquintRight = ReadFloat(message);
                 break;
             }
             break;
@@ -556,28 +556,28 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/BrowPinchLeft":
-                _leftBrowPinch = ReadFloat(message);
+                _BrowPinchLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowLowererLeft":
-                _leftBrowLower = ReadFloat(message);
+                _BrowLowererLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowPinchRight":
-                _rightBrowPinch = ReadFloat(message);
+                _BrowPinchRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowLowererRight":
-                _rightBrowLower = ReadFloat(message);
+                _BrowLowererRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowInnerUpLeft":
-                _leftInnerBrowRaise = ReadFloat(message);
+                _BrowInnerUpLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowInnerUpRight":
-                _rightInnerBrowRaise = ReadFloat(message);
+                _BrowInnerUpRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowOuterUpLeft":
-                _leftOuterBrowRaise = ReadFloat(message);
+                _BrowOuterUpLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/BrowOuterUpRight":
-                _rightOuterBrowRaise = ReadFloat(message);
+                _BrowOuterUpRight = ReadFloat(message);
                 break;
             }
             break;
@@ -585,10 +585,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             switch (address)
             {
               case "/avatar/parameters/FT/v2/NoseSneerLeft":
-                _noseWrinkleLeft = ReadFloat(message);
+                _NoseSneerLeft = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/NoseSneerRight":
-                _noseWrinkleRight = ReadFloat(message);
+                _NoseSneerRight = ReadFloat(message);
                 break;
             }
             break;
