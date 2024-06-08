@@ -64,13 +64,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _EyeSquintRight;
 
-  private float _MouthCornerPullLeft;
+  private float _MouthSmileLeft;
 
-  private float _MouthCornerSlantLeft;
-
-  private float _MouthCornerPullRight;
-
-  private float _MouthCornerSlantRight;
+  private float _MouthSmileRight;
 
   private float _MouthFrownLeft;
 
@@ -295,10 +291,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     //   return;
     // }
     mouth.IsTracking = true;
-    float MouthSmileLeft = _MouthCornerPullLeft - _MouthCornerSlantLeft;
-    mouth.MouthLeftSmileFrown = MouthSmileLeft - _MouthFrownLeft;
-    float MouthSmileRight = _MouthCornerPullRight - _MouthCornerSlantRight;
-    mouth.MouthRightSmileFrown = MouthSmileRight - _MouthFrownRight;
+    mouth.MouthLeftSmileFrown = _MouthSmileLeft - _MouthFrownLeft;
+    mouth.MouthRightSmileFrown = _MouthSmileRight - _MouthFrownRight;
     mouth.MouthLeftDimple = _MouthDimpleLeft;
     mouth.MouthRightDimple = _MouthDimpleRight;
     mouth.CheekLeftPuffSuck = _CheekPuffLeft - _CheekSuckLeft;
@@ -445,17 +439,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
               case "/avatar/parameters/FT/v2/MouthUpperUpRight":
                 _MouthUpperUpRight = ReadFloat(message);
                 break;
-              case "/avatar/parameters/FT/v2/MouthCornerPullLeft":
-                _MouthCornerPullLeft = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/MouthSmileLeft":
+                _MouthSmileLeft = ReadFloat(message);
                 break;
-              case "/avatar/parameters/FT/v2/MouthCornerSlantLeft":
-                _MouthCornerSlantLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthCornerPullRight":
-                _MouthCornerPullRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthCornerSlantRight":
-                _MouthCornerSlantRight = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/MouthSmileRight":
+                _MouthSmileRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/MouthStretchLeft":
                 _MouthStretchLeft = ReadFloat(message);
