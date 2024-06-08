@@ -3,7 +3,6 @@ using System.Net;
 using System.Threading;
 using Elements.Core;
 using FrooxEngine;
-using ResoniteModLoader;
 using Rug.Osc;
 
 namespace VRCFTReceiver;
@@ -200,16 +199,18 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     UniLog.Log("Starting OSC processing thread");
     thread = new Thread(ReceiveTrackingData);
     thread.Start();
-    Loader.config.OnThisConfigurationChanged += OnSettingsChanged;
+    OnSettingsChanged();
+    Loader.config.OnThisConfigurationChanged += (_) => OnSettingsChanged();
   }
 
-  private void OnSettingsChanged(ConfigurationChangedEvent configurationChangedEvent)
+  private void OnSettingsChanged()
   {
     int receiverPort = Loader.config.GetValue(Loader.KEY_RECEIVER_PORT);
     int senderPort = Loader.config.GetValue(Loader.KEY_SENDER_PORT);
     IPAddress ip = IPAddress.Parse(Loader.config.GetValue(Loader.KEY_IP));
     OscReceiver currentOscReceiver = this.oscReceiver;
-    if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort) && receiverPort != 0)
+    OscSender currentOscSender = this.oscSender;
+    if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
     {
       try
       {
@@ -223,6 +224,23 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       catch (Exception ex)
       {
         UniLog.Error("Exception when starting VRCFaceTracking OSC receiver:\n" + ex);
+      }
+    }
+
+    if ((currentOscSender == null || currentOscSender.Port != senderPort || currentOscSender.RemoteAddress != ip) && senderPort != 0 && ip != null)
+    {
+      try
+      {
+        UniLog.Log($"Starting VRCFaceTracking OSC sender on on port {senderPort}");
+        OscSender oscSender = new OscSender(ip, senderPort);
+        oscSender.Connect();
+        OscSender previousOscSender = this.oscSender;
+        this.oscSender = oscSender;
+        previousOscSender?.Close();
+      }
+      catch (Exception ex)
+      {
+        UniLog.Error("Exception when starting VRCFaceTracking OSC sender:\n" + ex);
       }
     }
   }
@@ -254,8 +272,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     );
 
     float3 rightGazeVector = new float3(
-      radius * MathX.Sin(_EyeRightY) * MathX.Cos(_EyeLeftX),
-      radius * MathX.Sin(_EyeRightY) * MathX.Sin(_EyeLeftX),
+      radius * MathX.Sin(_EyeRightY) * MathX.Cos(_EyeRightX),
+      radius * MathX.Sin(_EyeRightY) * MathX.Sin(_EyeRightX),
       radius * MathX.Cos(_EyeRightY)
     );
 
@@ -603,7 +621,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       try
       {
-        UniLog.Log($"Processing SteamLink OSC on on port {oscReceiver.Port}");
+        UniLog.Log($"Processing VRCFT OSC on on port {oscReceiver.Port}");
         while (oscReceiver.State == OscSocketState.Connected)
         {
           OscPacket oscPacket = oscReceiver.Receive();
@@ -636,7 +654,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       try
       {
-        UniLog.Log($"Disposing of SteamLink OSC on on port {oscReceiver.Port}");
+        UniLog.Log($"Disposing of VRCFT OSC on on port {oscReceiver.Port}");
         oscReceiver.Dispose();
       }
       catch (Exception ex2)
@@ -648,10 +666,41 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     UniLog.Log("OSC processing thread completed");
   }
 
+  public void RequestTrackingData()
+  {
+    const int maxAttempts = 50;
+    const int sleepDurationMs = 100;
+
+    int attempts = 0;
+    while (oscSender == null && attempts < maxAttempts)
+    {
+      Thread.Sleep(sleepDurationMs);
+      attempts++;
+    }
+
+    if (oscSender == null)
+    {
+      UniLog.Error("Failed to initialize oscSender after maximum attempts.");
+    }
+
+    try
+    {
+      var message = new OscMessage("/vrcft/settings/forceRelevant", true);
+
+      oscSender.Send(message);
+      UniLog.Log("Sent message to request tracking data for VRCFT OSC");
+    }
+    catch (Exception ex)
+    {
+      UniLog.Error($"Failed to send tracking data request: {ex.Message}");
+    }
+  }
+
   public void Dispose()
   {
     disposed = true;
     oscReceiver?.Close();
+    oscSender?.Close();
   }
 
   private static bool IsTracking(DateTime? timestamp)
