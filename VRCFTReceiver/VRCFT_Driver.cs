@@ -235,15 +235,16 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateEyes(float deltaTime)
   {
-    if (!IsTracking(lastEyeTracking))
-    {
-      eyes.IsEyeTrackingActive = false;
-      eyes.SetTracking(state: false);
-      return;
-    }
+    // if (!IsTracking(lastEyeTracking))
+    // {
+    //   eyes.IsEyeTrackingActive = false;
+    //   eyes.SetTracking(state: false);
+    //   return;
+    // }
     eyes.IsEyeTrackingActive = input.VR_Active;
     eyes.SetTracking(state: true);
 
+    // no idea if this math is going to work
     float radius = 2.0f;
 
     float3 leftGazeVector = new float3(
