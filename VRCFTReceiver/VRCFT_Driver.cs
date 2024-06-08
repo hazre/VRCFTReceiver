@@ -321,6 +321,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.LipRightStretchTighten = _MouthStretchRight - _MouthTightenerRight;
     mouth.LipsLeftPress = _MouthPressLeft;
     mouth.LipsRightPress = _MouthPressRight;
+    // I don't know what's happening here, let's just trust froox.
     mouth.Jaw = new float3(_JawRight - _JawLeft, 0f - _MouthClosed, _JawForward);
     mouth.JawOpen = MathX.Clamp01(_JawOpen - _MouthClosed);
     // removed _tongueRetreat, it's not part of UE
@@ -402,7 +403,6 @@ public class VRCFT_Driver : IInputDriver, IDisposable
                 break;
             }
             break;
-          // TODO: add rest of tongue parameters
           case 'T':
             switch (address)
             {
