@@ -92,13 +92,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _LipPuckerUpperRight;
 
-  private float _CheekPuffLeft;
+  private float _CheekPuffSuckLeft;
 
-  private float _CheekSuckLeft;
-
-  private float _CheekPuffRight;
-
-  private float _CheekSuckRight;
+  private float _CheekPuffSuckRight;
 
   private float _CheekSquintLeft;
 
@@ -295,8 +291,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.MouthRightSmileFrown = _MouthSmileRight - _MouthFrownRight;
     mouth.MouthLeftDimple = _MouthDimpleLeft;
     mouth.MouthRightDimple = _MouthDimpleRight;
-    mouth.CheekLeftPuffSuck = _CheekPuffLeft - _CheekSuckLeft;
-    mouth.CheekRightPuffSuck = _CheekPuffRight - _CheekSuckRight;
+    mouth.CheekLeftPuffSuck = _CheekPuffSuckLeft;
+    mouth.CheekRightPuffSuck = _CheekPuffSuckRight;
     mouth.CheekLeftRaise = _CheekSquintLeft;
     mouth.CheekRightRaise = _CheekSquintRight;
     mouth.LipUpperLeftRaise = _MouthUpperUpLeft;
@@ -520,17 +516,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
           case 'C':
             switch (address)
             {
-              case "/avatar/parameters/FT/v2/CheekPuffLeft":
-                _CheekPuffLeft = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/CheekPuffSuckLeft":
+                _CheekPuffSuckLeft = ReadFloat(message);
                 break;
-              case "/avatar/parameters/FT/v2/CheekPuffRight":
-                _CheekPuffRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/CheekSuckLeft":
-                _CheekSuckLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/CheekSuckRight":
-                _CheekSuckRight = ReadFloat(message);
+              case "/avatar/parameters/FT/v2/CheekPuffSuckRight":
+                _CheekPuffSuckRight = ReadFloat(message);
                 break;
               case "/avatar/parameters/FT/v2/CheekSquintLeft":
                 _CheekSquintLeft = ReadFloat(message);
