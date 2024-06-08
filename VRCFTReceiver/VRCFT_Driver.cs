@@ -120,6 +120,12 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private float _TongueOut;
 
+  private float _TongueRoll;
+
+  private float _TongueX;
+
+  private float _TongueY;
+
   private float _MouthUpperX;
 
   private float _MouthLowerX;
@@ -318,8 +324,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.Jaw = new float3(_JawRight - _JawLeft, 0f - _MouthClosed, _JawForward);
     mouth.JawOpen = MathX.Clamp01(_JawOpen - _MouthClosed);
     // removed _tongueRetreat, it's not part of UE
-    // TODO: add rest of tongue parameters
-    mouth.Tongue = new float3(0f, 0f, _TongueOut);
+    mouth.Tongue = new float3(_TongueX, _TongueY, _TongueOut);
+    mouth.TongueRoll = _TongueRoll;
     mouth.NoseWrinkleLeft = _NoseSneerLeft;
     mouth.NoseWrinkleRight = _NoseSneerRight;
     mouth.ChinRaiseBottom = _MouthRaiserLower;
@@ -402,6 +408,15 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             {
               case "/avatar/parameters/FT/v2/TongueOut":
                 _TongueOut = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/TongueRoll":
+                _TongueRoll = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/TongueX":
+                _TongueX = ReadFloat(message);
+                break;
+              case "/avatar/parameters/FT/v2/TongueY":
+                _TongueY = ReadFloat(message);
                 break;
             }
             break;
