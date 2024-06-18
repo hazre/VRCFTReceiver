@@ -19,7 +19,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 
 ## Requirements
 
-- [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) 5.X.X
+- [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) 5.1.1 (Version 5.2.3 is broken currently, please use 5.1.1)
 
 ## Resonite Prefabs
 
