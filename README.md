@@ -20,6 +20,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 ## Requirements
 
 - [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) 5.1.1 (Version 5.2.3 is broken currently, please use 5.1.1)
+  - **How to run/install v5.1.1 even though the certificate has expired:** Download the [MSIX file](https://github.com/benaclejames/VRCFaceTracking/releases/download/5.1.1.0/VRCFaceTracking_5.1.1.0_x64.msix), rename the extension to .zip and export it in a folder. Then you should be able to run VRCFaceTracking.exe in that folder to launch VRCFT v5.1.1
 
 ## Resonite Prefabs
 
