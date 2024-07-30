@@ -652,6 +652,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
               }
             }
           }
+          else if (oscPacket is OscMessage message)
+          {
+            UpdateData(message);
+          }
           else
           {
             Loader.Warn("Unexpected root Osc packet: " + oscPacket);
