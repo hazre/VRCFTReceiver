@@ -13,6 +13,10 @@ namespace VRCFTReceiver
         public static ModConfigurationKey<int> KEY_RECEIVER_PORT = new("receiver_port", "Which port should the OSC data be received from?", () => 9000);
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> KEY_SENDER_PORT = new("sender_port", "Which port should the OSC parameters message be sent to?", () => 9001);
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<bool> ENABLE_EYE_TRACKING = new("enable_eye_tracking", "Enable eye tracking?", () => true);
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<bool> ENABLE_FACE_TRACKING = new("enable_face_tracking", "Enable face tracking?", () => true);
         public static ModConfiguration config;
         public static VRCFT_Driver VRCFTDriver;
         public override string Name => "VRCFTReceiver";

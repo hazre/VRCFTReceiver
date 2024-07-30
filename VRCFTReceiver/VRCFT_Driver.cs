@@ -23,6 +23,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   private OscReceiver oscReceiver;
   private OscSender oscSender;
 
+  private bool EnableEyeTracking;
+  private bool EnableFaceTracking;
+
   private DateTime? lastEyeTracking;
 
   private DateTime? lastFaceTracking;
@@ -205,9 +208,16 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void OnSettingsChanged()
   {
+    EnableEyeTracking = Loader.config.GetValue(Loader.ENABLE_EYE_TRACKING);
+    Loader.Debug("Enable Eye Tracking: " + EnableEyeTracking);
+    EnableFaceTracking = Loader.config.GetValue(Loader.ENABLE_FACE_TRACKING);
+    Loader.Debug("Enable Face Tracking: " + EnableFaceTracking);
     int receiverPort = Loader.config.GetValue(Loader.KEY_RECEIVER_PORT);
+    Loader.Debug("Receiver Port: " + receiverPort);
     int senderPort = Loader.config.GetValue(Loader.KEY_SENDER_PORT);
+    Loader.Debug("Sender Port: " + senderPort);
     IPAddress ip = IPAddress.Parse(Loader.config.GetValue(Loader.KEY_IP));
+    Loader.Debug("IP Address: " + ip);
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -253,14 +263,16 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateEyes(float deltaTime)
   {
-    if (!IsTracking(lastEyeTracking))
+    if (!EnableEyeTracking)
     {
       eyes.IsEyeTrackingActive = false;
-      eyes.SetTracking(state: false);
+      eyes.SetTracking(false);
       return;
     }
-    eyes.IsEyeTrackingActive = input.VR_Active;
-    eyes.SetTracking(state: true);
+
+    // eyes.IsEyeTrackingActive = input.VR_Active;
+    eyes.IsEyeTrackingActive = true;
+    eyes.SetTracking(true);
 
     // no idea if this math is going to work
     float radius = 2.0f;
@@ -305,12 +317,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateMouth(float deltaTime)
   {
-    // add a settings option here as well
-    // if (!IsTracking(lastFaceTracking))
-    // {
-    //   mouth.IsTracking = false;
-    //   return;
-    // }
+    if (!EnableFaceTracking)
+    {
+      mouth.IsTracking = false;
+      return;
+    }
     mouth.IsTracking = true;
     mouth.MouthLeftSmileFrown = _MouthSmileLeft - _MouthFrownLeft;
     mouth.MouthRightSmileFrown = _MouthSmileRight - _MouthFrownRight;
@@ -605,6 +616,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             break;
         }
         break;
+      default:
+        Loader.Debug("Could not find address: " + address);
+        break;
     }
   }
 
@@ -717,7 +731,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private static float ReadFloat(OscMessage message)
   {
-    Loader.Debug($"Processing {message.Address} {message[0]}");
+    Loader.Debug($"Processing Address {message.Address} {message[0]}");
     return (float)message[0];
   }
 
