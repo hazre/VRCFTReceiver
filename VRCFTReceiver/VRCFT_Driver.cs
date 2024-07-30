@@ -372,6 +372,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       return;
     }
 
+    if (message[0] is not float)
+    {
+      Loader.Debug("OscMessage is not a float, skipping " + message);
+      return;
+    }
     switch (address[22])
     {
       case 'B':
