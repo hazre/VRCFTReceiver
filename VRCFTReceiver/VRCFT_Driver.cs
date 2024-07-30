@@ -196,7 +196,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       MouthParameterGroup.ChinRaise,
       MouthParameterGroup.NoseWrinkle
     });
-    UniLog.Log("Starting OSC processing thread");
+    Loader.Msg("Starting OSC processing thread");
     thread = new Thread(ReceiveTrackingData);
     thread.Start();
     OnSettingsChanged();
@@ -214,7 +214,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     {
       try
       {
-        UniLog.Log($"Starting VRCFaceTracking OSC listener on on port {receiverPort}");
+        Loader.Msg($"Starting VRCFaceTracking OSC listener on on port {receiverPort}");
         OscReceiver oscReceiver = new OscReceiver(ip, receiverPort);
         oscReceiver.Connect();
         OscReceiver previousOscReceiver = this.oscReceiver;
@@ -223,7 +223,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       catch (Exception ex)
       {
-        UniLog.Error("Exception when starting VRCFaceTracking OSC receiver:\n" + ex);
+        Loader.Error("Exception when starting VRCFaceTracking OSC receiver:\n" + ex);
       }
     }
 
@@ -231,7 +231,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     {
       try
       {
-        UniLog.Log($"Starting VRCFaceTracking OSC sender on on port {senderPort}");
+        Loader.Msg($"Starting VRCFaceTracking OSC sender on on port {senderPort}");
         OscSender oscSender = new OscSender(ip, senderPort);
         oscSender.Connect();
         OscSender previousOscSender = this.oscSender;
@@ -240,7 +240,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       catch (Exception ex)
       {
-        UniLog.Error("Exception when starting VRCFaceTracking OSC sender:\n" + ex);
+        Loader.Error("Exception when starting VRCFaceTracking OSC sender:\n" + ex);
       }
     }
   }
@@ -253,12 +253,12 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateEyes(float deltaTime)
   {
-    // if (!IsTracking(lastEyeTracking))
-    // {
-    //   eyes.IsEyeTrackingActive = false;
-    //   eyes.SetTracking(state: false);
-    //   return;
-    // }
+    if (!IsTracking(lastEyeTracking))
+    {
+      eyes.IsEyeTrackingActive = false;
+      eyes.SetTracking(state: false);
+      return;
+    }
     eyes.IsEyeTrackingActive = input.VR_Active;
     eyes.SetTracking(state: true);
 
@@ -305,7 +305,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateMouth(float deltaTime)
   {
-    // replace this with a settings option instead
+    // add a settings option here as well
     // if (!IsTracking(lastFaceTracking))
     // {
     //   mouth.IsTracking = false;
@@ -350,6 +350,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.NoseWrinkleRight = _NoseSneerRight;
     mouth.ChinRaiseBottom = _MouthRaiserLower;
     mouth.ChinRaiseTop = _MouthRaiserUpper;
+    // Loader.Debug($"Updated Mouth parameters");
   }
 
   private void UpdateData(OscMessage message)
@@ -359,250 +360,248 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     {
       return;
     }
-    switch (address.Length)
+
+    switch (address[22])
     {
-      case 24:
-        switch (address[25])
+      case 'B':
+        switch (address)
         {
-          case 'B':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/BrowInnerUpLeft":
-                _BrowInnerUpLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowInnerUpRight":
-                _BrowInnerUpRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowLowererLeft":
-                _BrowLowererLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowLowererRight":
-                _BrowLowererRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowOuterUpLeft":
-                _BrowOuterUpLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowOuterUpRight":
-                _BrowOuterUpRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowPinchLeft":
-                _BrowPinchLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/BrowPinchRight":
-                _BrowPinchRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowInnerUpLeft":
+            _BrowInnerUpLeft = ReadFloat(message);
             break;
-          case 'C':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/CheekPuffSuckLeft":
-                _CheekPuffSuckLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/CheekPuffSuckRight":
-                _CheekPuffSuckRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/CheekSquintLeft":
-                _CheekSquintLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/CheekSquintRight":
-                _CheekSquintRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowInnerUpRight":
+            _BrowInnerUpRight = ReadFloat(message);
             break;
-          case 'D':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/MouthDimpleLeft":
-                _MouthDimpleLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthDimpleRight":
-                _MouthDimpleRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowLowererLeft":
+            _BrowLowererLeft = ReadFloat(message);
             break;
-          case 'E':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/EyeLeftX":
-                _EyeLeftX = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeLeftY":
-                _EyeLeftY = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeOpenLeft":
-                _EyeOpenLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeOpenRight":
-                _EyeOpenRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeRightX":
-                _EyeRightX = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeRightY":
-                _EyeRightY = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeSquintLeft":
-                _EyeSquintLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeSquintRight":
-                _EyeSquintRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeWideLeft":
-                _EyeWideLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/EyeWideRight":
-                _EyeWideRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowLowererRight":
+            _BrowLowererRight = ReadFloat(message);
             break;
-          case 'J':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/JawForward":
-                _JawForward = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/JawLeft":
-                _JawLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/JawOpen":
-                _JawOpen = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/JawRight":
-                _JawRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowOuterUpLeft":
+            _BrowOuterUpLeft = ReadFloat(message);
             break;
-          case 'L':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/LipFunnelLowerLeft":
-                _LipFunnelLowerLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipFunnelLowerRight":
-                _LipFunnelLowerRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipFunnelUpperLeft":
-                _LipFunnelUpperLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipFunnelUpperRight":
-                _LipFunnelUpperRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipPuckerLowerLeft":
-                _LipPuckerLowerLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipPuckerLowerRight":
-                _LipPuckerLowerRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipPuckerUpperLeft":
-                _LipPuckerUpperLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipPuckerUpperRight":
-                _LipPuckerUpperRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipSuckLowerLeft":
-                _LipSuckLowerLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipSuckLowerRight":
-                _LipSuckLowerRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipSuckUpperLeft":
-                _LipSuckUpperLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/LipSuckUpperRight":
-                _LipSuckUpperRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowOuterUpRight":
+            _BrowOuterUpRight = ReadFloat(message);
             break;
-          case 'M':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/MouthClosed":
-                _MouthClosed = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthFrownLeft":
-                _MouthFrownLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthFrownRight":
-                _MouthFrownRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthLowerDownLeft":
-                _MouthLowerDownLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthLowerDownRight":
-                _MouthLowerDownRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthLowerX":
-                _MouthLowerX = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthPressLeft":
-                _MouthPressLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthPressRight":
-                _MouthPressRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthRaiserLower":
-                _MouthRaiserLower = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthRaiserUpper":
-                _MouthRaiserUpper = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthSmileLeft":
-                _MouthSmileLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthSmileRight":
-                _MouthSmileRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthStretchLeft":
-                _MouthStretchLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthStretchRight":
-                _MouthStretchRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthTightenerLeft":
-                _MouthTightenerLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthTightenerRight":
-                _MouthTightenerRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthUpperUpLeft":
-                _MouthUpperUpLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthUpperUpRight":
-                _MouthUpperUpRight = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/MouthUpperX":
-                _MouthUpperX = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowPinchLeft":
+            _BrowPinchLeft = ReadFloat(message);
             break;
-          case 'N':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/NoseSneerLeft":
-                _NoseSneerLeft = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/NoseSneerRight":
-                _NoseSneerRight = ReadFloat(message);
-                break;
-            }
+          case "/avatar/parameters/v2/BrowPinchRight":
+            _BrowPinchRight = ReadFloat(message);
             break;
-          case 'T':
-            switch (address)
-            {
-              case "/avatar/parameters/FT/v2/TongueOut":
-                _TongueOut = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/TongueRoll":
-                _TongueRoll = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/TongueX":
-                _TongueX = ReadFloat(message);
-                break;
-              case "/avatar/parameters/FT/v2/TongueY":
-                _TongueY = ReadFloat(message);
-                break;
-            }
+        }
+        break;
+      case 'C':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/CheekPuffSuckLeft":
+            _CheekPuffSuckLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/CheekPuffSuckRight":
+            _CheekPuffSuckRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/CheekSquintLeft":
+            _CheekSquintLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/CheekSquintRight":
+            _CheekSquintRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'D':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/MouthDimpleLeft":
+            _MouthDimpleLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthDimpleRight":
+            _MouthDimpleRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'E':
+        lastEyeTracking = DateTime.Now;
+        switch (address)
+        {
+          case "/avatar/parameters/v2/EyeLeftX":
+            _EyeLeftX = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeLeftY":
+            _EyeLeftY = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeOpenLeft":
+            _EyeOpenLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeOpenRight":
+            _EyeOpenRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeRightX":
+            _EyeRightX = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeRightY":
+            _EyeRightY = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeSquintLeft":
+            _EyeSquintLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeSquintRight":
+            _EyeSquintRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeWideLeft":
+            _EyeWideLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/EyeWideRight":
+            _EyeWideRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'J':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/JawForward":
+            _JawForward = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/JawLeft":
+            _JawLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/JawOpen":
+            _JawOpen = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/JawRight":
+            _JawRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'L':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/LipFunnelLowerLeft":
+            _LipFunnelLowerLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipFunnelLowerRight":
+            _LipFunnelLowerRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipFunnelUpperLeft":
+            _LipFunnelUpperLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipFunnelUpperRight":
+            _LipFunnelUpperRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipPuckerLowerLeft":
+            _LipPuckerLowerLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipPuckerLowerRight":
+            _LipPuckerLowerRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipPuckerUpperLeft":
+            _LipPuckerUpperLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipPuckerUpperRight":
+            _LipPuckerUpperRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipSuckLowerLeft":
+            _LipSuckLowerLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipSuckLowerRight":
+            _LipSuckLowerRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipSuckUpperLeft":
+            _LipSuckUpperLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/LipSuckUpperRight":
+            _LipSuckUpperRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'M':
+        lastFaceTracking = DateTime.Now;
+        switch (address)
+        {
+          case "/avatar/parameters/v2/MouthClosed":
+            _MouthClosed = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthFrownLeft":
+            _MouthFrownLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthFrownRight":
+            _MouthFrownRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthLowerDownLeft":
+            _MouthLowerDownLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthLowerDownRight":
+            _MouthLowerDownRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthLowerX":
+            _MouthLowerX = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthPressLeft":
+            _MouthPressLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthPressRight":
+            _MouthPressRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthRaiserLower":
+            _MouthRaiserLower = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthRaiserUpper":
+            _MouthRaiserUpper = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthSmileLeft":
+            _MouthSmileLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthSmileRight":
+            _MouthSmileRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthStretchLeft":
+            _MouthStretchLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthStretchRight":
+            _MouthStretchRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthTightenerLeft":
+            _MouthTightenerLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthTightenerRight":
+            _MouthTightenerRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthUpperUpLeft":
+            _MouthUpperUpLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthUpperUpRight":
+            _MouthUpperUpRight = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/MouthUpperX":
+            _MouthUpperX = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'N':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/NoseSneerLeft":
+            _NoseSneerLeft = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/NoseSneerRight":
+            _NoseSneerRight = ReadFloat(message);
+            break;
+        }
+        break;
+      case 'T':
+        switch (address)
+        {
+          case "/avatar/parameters/v2/TongueOut":
+            _TongueOut = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/TongueRoll":
+            _TongueRoll = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/TongueX":
+            _TongueX = ReadFloat(message);
+            break;
+          case "/avatar/parameters/v2/TongueY":
+            _TongueY = ReadFloat(message);
             break;
         }
         break;
@@ -621,7 +620,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       try
       {
-        UniLog.Log($"Processing VRCFT OSC on on port {oscReceiver.Port}");
+        Loader.Msg($"Processing VRCFT OSC on on port {oscReceiver.Port}");
         while (oscReceiver.State == OscSocketState.Connected)
         {
           OscPacket oscPacket = oscReceiver.Receive();
@@ -635,13 +634,13 @@ public class VRCFT_Driver : IInputDriver, IDisposable
               }
               else
               {
-                UniLog.Warning("Unexpected Osc packet type within bundle: " + item);
+                Loader.Warn("Unexpected Osc packet type within bundle: " + item);
               }
             }
           }
           else
           {
-            UniLog.Warning("Unexpected root Osc packet: " + oscPacket);
+            Loader.Warn("Unexpected root Osc packet: " + oscPacket);
           }
         }
       }
@@ -649,21 +648,21 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       {
         if (ex.Message != "The receiver socket has been disconnected")
         {
-          UniLog.Error("Exception in OSC listener thread:\n" + ex);
+          Loader.Error("Exception in OSC listener thread:\n" + ex);
         }
       }
       try
       {
-        UniLog.Log($"Disposing of VRCFT OSC on on port {oscReceiver.Port}");
+        Loader.Msg($"Disposing of VRCFT OSC on on port {oscReceiver.Port}");
         oscReceiver.Dispose();
       }
       catch (Exception ex2)
       {
-        UniLog.Error("Exception disposing of OSC receiver:\n" + ex2);
+        Loader.Error("Exception disposing of OSC receiver:\n" + ex2);
       }
     }
     while (!disposed);
-    UniLog.Log("OSC processing thread completed");
+    Loader.Msg("OSC processing thread completed");
   }
 
   public void RequestTrackingData()
@@ -680,7 +679,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
     if (oscSender == null)
     {
-      UniLog.Error("Failed to initialize oscSender after maximum attempts.");
+      Loader.Error("Failed to initialize oscSender after maximum attempts.");
     }
 
     try
@@ -688,11 +687,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       var message = new OscMessage("/vrcft/settings/forceRelevant", true);
 
       oscSender.Send(message);
-      UniLog.Log("Sent message to request tracking data for VRCFT OSC");
+      Loader.Msg("Sent message to request tracking data for VRCFT OSC");
     }
     catch (Exception ex)
     {
-      UniLog.Error($"Failed to send tracking data request: {ex.Message}");
+      Loader.Error($"Failed to send tracking data request: {ex.Message}");
     }
   }
 
@@ -718,6 +717,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private static float ReadFloat(OscMessage message)
   {
+    Loader.Debug($"Processing {message.Address} {message[0]}");
     return (float)message[0];
   }
 
