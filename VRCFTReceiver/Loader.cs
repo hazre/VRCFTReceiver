@@ -36,7 +36,8 @@ namespace VRCFTReceiver
             {
                 try
                 {
-                    Engine.Current.InputInterface.RegisterInputDriver(new VRCFT_Driver());
+                    VRCFTDriver = new VRCFT_Driver();
+                    Engine.Current.InputInterface.RegisterInputDriver(VRCFTDriver);
                 }
                 catch (Exception ex)
                 {
@@ -52,7 +53,11 @@ namespace VRCFTReceiver
             {
                 Msg($"Starting UserRoot");
                 if (!__instance.ActiveUser.IsLocalUser) return;
-                if (VRCFTDriver == null) return;
+                if (VRCFTDriver == null)
+                {
+                    Warn("VRCFT driver is not initialized!");
+                    return;
+                };
                 VRCFTDriver.RequestTrackingData();
             }
         }
