@@ -26,6 +26,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private bool EnableEyeTracking;
   private bool EnableFaceTracking;
+  private bool EnableDesktop = false;
 
   private DateTime? lastEyeTracking;
 
@@ -243,6 +244,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     Loader.Msg("Eyes Reversed Y: " + EyesReversedY);
     EyesReversedX = Loader.config.GetValue(Loader.REVERSE_EYES_X);
     Loader.Msg("Eyes Reversed X: " + EyesReversedX);
+    EnableDesktop = Loader.config.GetValue(Loader.ENABLE_DESKTOP);
+    Loader.Msg("Enable in Desktop: " + EnableDesktop);
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -303,7 +306,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateEyes(float deltaTime)
   {
-    if (!EnableEyeTracking)
+    if (!EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
     {
       eyes.IsEyeTrackingActive = false;
       eyes.SetTracking(false);
@@ -312,7 +315,6 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
     lock (_lock)
     {
-      // eyes.IsEyeTrackingActive = input.VR_Active;
       eyes.IsEyeTrackingActive = true;
       eyes.SetTracking(true);
 
@@ -347,7 +349,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateMouth(float deltaTime)
   {
-    if (!EnableFaceTracking)
+    if (!EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
     {
       mouth.IsTracking = false;
       return;
