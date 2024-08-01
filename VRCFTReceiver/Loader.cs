@@ -19,6 +19,8 @@ namespace VRCFTReceiver
         public static ModConfigurationKey<bool> ENABLE_FACE_TRACKING = new("enable_face_tracking", "Enable face tracking?", () => true);
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<bool> REVERSE_EYES_Y = new("reverse_eyes_y", "Reverse eyetracking y direction", () => false);
+        [AutoRegisterConfigKey]
+        public static ModConfigurationKey<bool> REVERSE_EYES_X = new("reverse_eyes_x", "Reverse eyetracking x direction", () => false);
         public static ModConfiguration config;
         public static VRCFT_Driver VRCFTDriver;
         public override string Name => "VRCFTReceiver";

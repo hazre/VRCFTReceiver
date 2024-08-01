@@ -31,7 +31,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
-  public bool EyesReversed = false;
+  public bool EyesReversedY = false;
+  public bool EyesReversedX = false;
   public VRCFTEye EyeLeft = new();
   public VRCFTEye EyeRight = new();
   public VRCFTEye EyeCombined => new()
@@ -238,8 +239,10 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     Loader.Msg("Sender Port: " + senderPort);
     IPAddress ip = IPAddress.Parse(Loader.config.GetValue(Loader.KEY_IP));
     Loader.Msg("IP Address: " + ip);
-    EyesReversed = Loader.config.GetValue(Loader.REVERSE_EYES_Y);
-    Loader.Msg("Eyes Reversed: " + EyesReversed);
+    EyesReversedY = Loader.config.GetValue(Loader.REVERSE_EYES_Y);
+    Loader.Msg("Eyes Reversed Y: " + EyesReversedY);
+    EyesReversedX = Loader.config.GetValue(Loader.REVERSE_EYES_X);
+    Loader.Msg("Eyes Reversed X: " + EyesReversedX);
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -472,21 +475,27 @@ public class VRCFT_Driver : IInputDriver, IDisposable
         switch (address)
         {
           case "/avatar/parameters/v2/EyeLeftX":
-            EyeLeft.SetDirectionFromXY(X: ReadFloat(message));
+            {
+              float value = ReadFloat(message);
+              EyeLeft.SetDirectionFromXY(X: EyesReversedX ? -value : value);
+            }
             break;
           case "/avatar/parameters/v2/EyeLeftY":
             {
               float value = ReadFloat(message);
-              EyeLeft.SetDirectionFromXY(Y: EyesReversed ? -value : value);
+              EyeLeft.SetDirectionFromXY(Y: EyesReversedY ? value : -value);
             }
             break;
           case "/avatar/parameters/v2/EyeRightX":
-            EyeRight.SetDirectionFromXY(X: ReadFloat(message));
+            {
+              float value = ReadFloat(message);
+              EyeRight.SetDirectionFromXY(X: EyesReversedX ? -value : value);
+            }
             break;
           case "/avatar/parameters/v2/EyeRightY":
             {
               float value = ReadFloat(message);
-              EyeRight.SetDirectionFromXY(Y: EyesReversed ? -value : value);
+              EyeRight.SetDirectionFromXY(Y: EyesReversedY ? value : -value);
             }
             break;
           case "/avatar/parameters/v2/EyeOpenLeft":
