@@ -30,15 +30,31 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
-  private float3 _gazePoint;
+  public bool EyesReversed;
+  public VRCFTEye EyeLeft = new();
+  public VRCFTEye EyeRight = new();
+  public VRCFTEye EyeCombined => new()
+  {
+    Eyelid = MathX.Max(EyeLeft.Eyelid, EyeRight.Eyelid),
+    EyeRotation = CombinedEyesDir
+  };
 
-  private float _EyeLeftX;
+  public floatQ CombinedEyesDir
+  {
+    get
+    {
+      if (EyeLeft.IsValid && EyeRight.IsValid && EyeLeft.IsTracking && EyeRight.IsTracking)
+        _lastValidCombined = MathX.Slerp(EyeLeft.EyeRotation, EyeRight.EyeRotation, 0.5f);
+      else if (EyeLeft.IsValid && EyeLeft.IsTracking)
+        _lastValidCombined = EyeLeft.EyeRotation;
+      else if (EyeRight.IsValid && EyeRight.IsTracking)
+        _lastValidCombined = EyeRight.EyeRotation;
 
-  private float _EyeLeftY;
+      return _lastValidCombined;
+    }
+  }
 
-  private float _EyeRightX;
-
-  private float _EyeRightY;
+  private floatQ _lastValidCombined = floatQ.Identity;
 
   private float _EyeOpenLeft;
 
@@ -220,6 +236,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     Loader.Msg("Sender Port: " + senderPort);
     IPAddress ip = IPAddress.Parse(Loader.config.GetValue(Loader.KEY_IP));
     Loader.Msg("IP Address: " + ip);
+    EyesReversed = Loader.config.GetValue(Loader.REVERSE_EYES_Y);
+    Loader.Msg("Eyes Reversed: " + EyesReversed);
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -276,24 +294,9 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     eyes.IsEyeTrackingActive = true;
     eyes.SetTracking(true);
 
-    // float3 v = float3.Left;
-    // float3 v2 = v * 0.065f;
-    // float3 b = v2 * 0.5f;
-    // v = float3.Right;
-    // v2 = v * 0.065f;
-    // float3 b2 = v2 * 0.5f;
-    // float3 direction = (_gazePoint - b).Normalized;
-    // float3 direction2 = (_gazePoint - b2).Normalized;
-
-    // same thing as above but shorter maybe
-    float3 leftEyePosition = new float3(-0.0325f, 0f, 0f);
-    float3 rightEyePosition = new float3(0.0325f, 0f, 0f);
-
-    float3 leftEyeDirection = (_gazePoint - leftEyePosition).Normalized;
-    float3 rightEyeDirection = (_gazePoint - rightEyePosition).Normalized;
-
-    eyes.LeftEye.UpdateWithDirection(in leftEyeDirection);
-    eyes.RightEye.UpdateWithDirection(in rightEyeDirection);
+    eyes.LeftEye.UpdateWithRotation(EyeLeft.EyeRotation);
+    eyes.RightEye.UpdateWithRotation(EyeRight.EyeRotation);
+    eyes.CombinedEye.UpdateWithRotation(EyeCombined.EyeRotation);
 
     eyes.LeftEye.Openness = _EyeOpenLeft;
     eyes.RightEye.Openness = _EyeOpenRight;
@@ -437,26 +440,30 @@ public class VRCFT_Driver : IInputDriver, IDisposable
         switch (address)
         {
           case "/avatar/parameters/v2/EyeLeftX":
-            // _EyeLeftX = ReadFloat(message);
-            UpdateEyeGaze(0, ReadFloat(message), isLeftEye: true);
+            EyeLeft.SetDirectionFromXY(X: ReadFloat(message));
             break;
           case "/avatar/parameters/v2/EyeLeftY":
-            // _EyeLeftY = ReadFloat(message);
-            UpdateEyeGaze(1, ReadFloat(message), isLeftEye: true);
+            {
+              float value = ReadFloat(message);
+              EyeLeft.SetDirectionFromXY(Y: EyesReversed ? -value : value);
+            }
             break;
           case "/avatar/parameters/v2/EyeRightX":
-            // _EyeRightX = ReadFloat(message);
-            UpdateEyeGaze(1, ReadFloat(message), isLeftEye: false);
+            EyeRight.SetDirectionFromXY(X: ReadFloat(message));
             break;
           case "/avatar/parameters/v2/EyeRightY":
-            // _EyeRightY = ReadFloat(message);
-            UpdateEyeGaze(0, ReadFloat(message), isLeftEye: false);
+            {
+              float value = ReadFloat(message);
+              EyeRight.SetDirectionFromXY(Y: EyesReversed ? -value : value);
+            }
             break;
           case "/avatar/parameters/v2/EyeOpenLeft":
             _EyeOpenLeft = ReadFloat(message);
+            EyeLeft.Eyelid = _EyeOpenLeft;
             break;
           case "/avatar/parameters/v2/EyeOpenRight":
             _EyeOpenRight = ReadFloat(message);
+            EyeRight.Eyelid = _EyeOpenRight;
             break;
           case "/avatar/parameters/v2/EyeSquintLeft":
             _EyeSquintLeft = ReadFloat(message);
@@ -636,7 +643,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       try
       {
-        Loader.Msg($"Processing VRCFT OSC on on port {oscReceiver.Port}");
+        Loader.Msg($"Processing VRCFT OSC on on port {oscReceiver.Port}, state {oscReceiver.State}");
         while (oscReceiver.State == OscSocketState.Connected)
         {
           OscPacket oscPacket = oscReceiver.Receive();
@@ -740,25 +747,38 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     Loader.Msg($"Processing Address {message.Address} {message[0]}");
     return (float)message[0];
   }
+}
 
-  private void UpdateEyeGaze(int component, float value, bool isLeftEye)
+// based on BlueCyro's Impressive code https://github.com/BlueCyro/Impressive
+public struct VRCFTEye
+{
+  public readonly bool IsTracking => IsValid && Eyelid > 0.1f;
+
+  public readonly bool IsValid => EyeDirection.Magnitude > 0f && MathX.IsValid(EyeDirection);
+
+  public float3 EyeDirection
   {
-    // Convert from [0, 1] to [-1, 1] range
-    float normalizedValue = (value * 2f) - 1f;
+    readonly get => EyeRotation * float3.Forward;
+    set => EyeRotation = floatQ.LookRotation(EyeDirection);
+  }
 
-    // Invert X for left eye (since looking left is negative in our coordinate system)
-    if (isLeftEye && component == 0)
-    {
-      normalizedValue *= -1f;
-    }
+  public floatQ EyeRotation;
 
-    _gazePoint = new float3(
-       component == 0 ? normalizedValue : _gazePoint.x,
-       component == 1 ? normalizedValue : _gazePoint.y,
-       -1f  // Ensure Z is always forward
-   );
+  private float DirX;
+  private float DirY;
 
-    // Normalize the gaze point
-    _gazePoint = _gazePoint.Normalized;
+  public float Eyelid;
+
+  public void SetDirectionFromXY(float? X = null, float? Y = null)
+  {
+    DirX = X ?? DirX;
+    DirY = Y ?? DirY;
+
+    // Get the angles out of the eye look
+    float xAng = MathX.Asin(DirX);
+    float yAng = MathX.Asin(DirY);
+
+    // Convert to cartesian coordinates
+    EyeRotation = floatQ.Euler(yAng * MathX.Rad2Deg, xAng * MathX.Rad2Deg, 0f);
   }
 }
