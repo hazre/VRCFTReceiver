@@ -20,6 +20,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private Thread thread;
 
+  private readonly object _lock = new();
   private OscReceiver oscReceiver;
   private OscSender oscSender;
 
@@ -222,6 +223,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     thread.Start();
     OnSettingsChanged();
     Loader.config.OnThisConfigurationChanged += (_) => OnSettingsChanged();
+    input.Engine.OnShutdown += Dispose;
   }
 
   private void OnSettingsChanged()
@@ -277,8 +279,23 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   public void UpdateInputs(float deltaTime)
   {
-    UpdateEyes(deltaTime);
-    UpdateMouth(deltaTime);
+    try
+    {
+      UpdateEyes(deltaTime);
+    }
+    catch (Exception ex)
+    {
+      Loader.Error($"Failed to UpdateEyes! Exception: {ex}");
+    }
+
+    try
+    {
+      UpdateMouth(deltaTime);
+    }
+    catch (Exception ex)
+    {
+      Loader.Error($"Failed to UpdateMouth! Exception: {ex}");
+    }
   }
 
   private void UpdateEyes(float deltaTime)
@@ -290,28 +307,39 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       return;
     }
 
-    // eyes.IsEyeTrackingActive = input.VR_Active;
-    eyes.IsEyeTrackingActive = true;
-    eyes.SetTracking(true);
+    lock (_lock)
+    {
+      // eyes.IsEyeTrackingActive = input.VR_Active;
+      eyes.IsEyeTrackingActive = true;
+      eyes.SetTracking(true);
 
-    eyes.LeftEye.UpdateWithRotation(EyeLeft.EyeRotation);
-    eyes.RightEye.UpdateWithRotation(EyeRight.EyeRotation);
-    eyes.CombinedEye.UpdateWithRotation(EyeCombined.EyeRotation);
+      UpdateEye(EyeLeft, eyes.LeftEye);
+      UpdateEye(EyeRight, eyes.RightEye);
+      UpdateEye(EyeCombined, eyes.CombinedEye);
 
-    eyes.LeftEye.Openness = _EyeOpenLeft;
-    eyes.RightEye.Openness = _EyeOpenRight;
-    eyes.LeftEye.Widen = _EyeWideLeft;
-    eyes.RightEye.Widen = _EyeWideRight;
-    eyes.LeftEye.Squeeze = _EyeSquintLeft;
-    eyes.RightEye.Squeeze = _EyeSquintRight;
-    float _leftBrowLowerer = _BrowPinchLeft - _BrowLowererLeft;
-    eyes.LeftEye.InnerBrowVertical = _BrowInnerUpLeft - _leftBrowLowerer;
-    eyes.LeftEye.OuterBrowVertical = _BrowOuterUpLeft - _leftBrowLowerer;
-    float _rightBrowLowerer = _BrowPinchRight - _BrowLowererRight;
-    eyes.RightEye.InnerBrowVertical = _BrowInnerUpRight - _rightBrowLowerer;
-    eyes.RightEye.OuterBrowVertical = _BrowOuterUpRight - _rightBrowLowerer;
-    eyes.ComputeCombinedEyeParameters();
-    eyes.FinishUpdate();
+      eyes.LeftEye.Openness = _EyeOpenLeft;
+      eyes.RightEye.Openness = _EyeOpenRight;
+      eyes.LeftEye.Widen = _EyeWideLeft;
+      eyes.RightEye.Widen = _EyeWideRight;
+      eyes.LeftEye.Squeeze = _EyeSquintLeft;
+      eyes.RightEye.Squeeze = _EyeSquintRight;
+      float _leftBrowLowerer = _BrowPinchLeft - _BrowLowererLeft;
+      eyes.LeftEye.InnerBrowVertical = _BrowInnerUpLeft - _leftBrowLowerer;
+      eyes.LeftEye.OuterBrowVertical = _BrowOuterUpLeft - _leftBrowLowerer;
+      float _rightBrowLowerer = _BrowPinchRight - _BrowLowererRight;
+      eyes.RightEye.InnerBrowVertical = _BrowInnerUpRight - _rightBrowLowerer;
+      eyes.RightEye.OuterBrowVertical = _BrowOuterUpRight - _rightBrowLowerer;
+      eyes.ComputeCombinedEyeParameters();
+      eyes.FinishUpdate();
+    }
+  }
+
+  public void UpdateEye(VRCFTEye source, Eye dest)
+  {
+    if (source.IsValid)
+    {
+      dest.UpdateWithRotation(source.EyeRotation);
+    }
   }
 
   private void UpdateMouth(float deltaTime)
@@ -321,46 +349,50 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       mouth.IsTracking = false;
       return;
     }
-    mouth.IsTracking = true;
-    mouth.MouthLeftSmileFrown = _MouthSmileLeft - _MouthFrownLeft;
-    mouth.MouthRightSmileFrown = _MouthSmileRight - _MouthFrownRight;
-    mouth.MouthLeftDimple = _MouthDimpleLeft;
-    mouth.MouthRightDimple = _MouthDimpleRight;
-    mouth.CheekLeftPuffSuck = _CheekPuffSuckLeft;
-    mouth.CheekRightPuffSuck = _CheekPuffSuckRight;
-    mouth.CheekLeftRaise = _CheekSquintLeft;
-    mouth.CheekRightRaise = _CheekSquintRight;
-    mouth.LipUpperLeftRaise = _MouthUpperUpLeft;
-    mouth.LipUpperRightRaise = _MouthUpperUpRight;
-    mouth.LipLowerLeftRaise = _MouthLowerDownLeft;
-    mouth.LipLowerRightRaise = _MouthLowerDownRight;
-    mouth.MouthPoutLeft = _LipPuckerLowerLeft - _LipPuckerUpperLeft;
-    mouth.MouthPoutRight = _LipPuckerLowerRight - _LipPuckerUpperRight;
-    mouth.LipUpperHorizontal = _MouthUpperX;
-    mouth.LipLowerHorizontal = _MouthLowerX;
-    mouth.LipTopLeftOverturn = _LipFunnelUpperLeft;
-    mouth.LipTopRightOverturn = _LipFunnelUpperRight;
-    mouth.LipBottomLeftOverturn = _LipFunnelLowerLeft;
-    mouth.LipBottomRightOverturn = _LipFunnelLowerRight;
-    mouth.LipTopLeftOverUnder = 0f - _LipSuckUpperLeft;
-    mouth.LipTopRightOverUnder = 0f - _LipSuckUpperRight;
-    mouth.LipBottomLeftOverUnder = 0f - _LipSuckLowerLeft;
-    mouth.LipBottomRightOverUnder = 0f - _LipSuckLowerRight;
-    mouth.LipLeftStretchTighten = _MouthStretchLeft - _MouthTightenerLeft;
-    mouth.LipRightStretchTighten = _MouthStretchRight - _MouthTightenerRight;
-    mouth.LipsLeftPress = _MouthPressLeft;
-    mouth.LipsRightPress = _MouthPressRight;
-    // I don't know what's happening here, let's just trust froox.
-    mouth.Jaw = new float3(_JawRight - _JawLeft, 0f - _MouthClosed, _JawForward);
-    mouth.JawOpen = MathX.Clamp01(_JawOpen - _MouthClosed);
-    // removed _tongueRetreat, it's not part of UE
-    mouth.Tongue = new float3(_TongueX, _TongueY, _TongueOut);
-    mouth.TongueRoll = _TongueRoll;
-    mouth.NoseWrinkleLeft = _NoseSneerLeft;
-    mouth.NoseWrinkleRight = _NoseSneerRight;
-    mouth.ChinRaiseBottom = _MouthRaiserLower;
-    mouth.ChinRaiseTop = _MouthRaiserUpper;
-    // Loader.Msg($"Updated Mouth parameters");
+
+    lock (_lock)
+    {
+      mouth.IsTracking = true;
+      mouth.MouthLeftSmileFrown = _MouthSmileLeft - _MouthFrownLeft;
+      mouth.MouthRightSmileFrown = _MouthSmileRight - _MouthFrownRight;
+      mouth.MouthLeftDimple = _MouthDimpleLeft;
+      mouth.MouthRightDimple = _MouthDimpleRight;
+      mouth.CheekLeftPuffSuck = _CheekPuffSuckLeft;
+      mouth.CheekRightPuffSuck = _CheekPuffSuckRight;
+      mouth.CheekLeftRaise = _CheekSquintLeft;
+      mouth.CheekRightRaise = _CheekSquintRight;
+      mouth.LipUpperLeftRaise = _MouthUpperUpLeft;
+      mouth.LipUpperRightRaise = _MouthUpperUpRight;
+      mouth.LipLowerLeftRaise = _MouthLowerDownLeft;
+      mouth.LipLowerRightRaise = _MouthLowerDownRight;
+      mouth.MouthPoutLeft = _LipPuckerLowerLeft - _LipPuckerUpperLeft;
+      mouth.MouthPoutRight = _LipPuckerLowerRight - _LipPuckerUpperRight;
+      mouth.LipUpperHorizontal = _MouthUpperX;
+      mouth.LipLowerHorizontal = _MouthLowerX;
+      mouth.LipTopLeftOverturn = _LipFunnelUpperLeft;
+      mouth.LipTopRightOverturn = _LipFunnelUpperRight;
+      mouth.LipBottomLeftOverturn = _LipFunnelLowerLeft;
+      mouth.LipBottomRightOverturn = _LipFunnelLowerRight;
+      mouth.LipTopLeftOverUnder = 0f - _LipSuckUpperLeft;
+      mouth.LipTopRightOverUnder = 0f - _LipSuckUpperRight;
+      mouth.LipBottomLeftOverUnder = 0f - _LipSuckLowerLeft;
+      mouth.LipBottomRightOverUnder = 0f - _LipSuckLowerRight;
+      mouth.LipLeftStretchTighten = _MouthStretchLeft - _MouthTightenerLeft;
+      mouth.LipRightStretchTighten = _MouthStretchRight - _MouthTightenerRight;
+      mouth.LipsLeftPress = _MouthPressLeft;
+      mouth.LipsRightPress = _MouthPressRight;
+      // I don't know what's happening here, let's just trust froox.
+      mouth.Jaw = new float3(_JawRight - _JawLeft, 0f - _MouthClosed, _JawForward);
+      mouth.JawOpen = MathX.Clamp01(_JawOpen - _MouthClosed);
+      // removed _tongueRetreat, it's not part of UE
+      mouth.Tongue = new float3(_TongueX, _TongueY, _TongueOut);
+      mouth.TongueRoll = _TongueRoll;
+      mouth.NoseWrinkleLeft = _NoseSneerLeft;
+      mouth.NoseWrinkleRight = _NoseSneerRight;
+      mouth.ChinRaiseBottom = _MouthRaiserLower;
+      mouth.ChinRaiseTop = _MouthRaiserUpper;
+      // Loader.Msg($"Updated Mouth parameters");
+    }
   }
 
   private void UpdateData(OscMessage message)
