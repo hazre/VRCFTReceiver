@@ -30,6 +30,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
+  private float3 _gazePoint;
+
   private float _EyeLeftX;
 
   private float _EyeLeftY;
@@ -274,31 +276,25 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     eyes.IsEyeTrackingActive = true;
     eyes.SetTracking(true);
 
-    // no idea if this math is going to work
-    float radius = 2.0f;
+    // float3 v = float3.Left;
+    // float3 v2 = v * 0.065f;
+    // float3 b = v2 * 0.5f;
+    // v = float3.Right;
+    // v2 = v * 0.065f;
+    // float3 b2 = v2 * 0.5f;
+    // float3 direction = (_gazePoint - b).Normalized;
+    // float3 direction2 = (_gazePoint - b2).Normalized;
 
-    float3 leftGazeVector = new float3(
-      radius * MathX.Sin(_EyeLeftY) * MathX.Cos(_EyeLeftX),
-      radius * MathX.Sin(_EyeLeftY) * MathX.Sin(_EyeLeftX),
-      radius * MathX.Cos(_EyeLeftY)
-    );
+    // same thing as above but shorter maybe
+    float3 leftEyePosition = new float3(-0.0325f, 0f, 0f);
+    float3 rightEyePosition = new float3(0.0325f, 0f, 0f);
 
-    float3 rightGazeVector = new float3(
-      radius * MathX.Sin(_EyeRightY) * MathX.Cos(_EyeRightX),
-      radius * MathX.Sin(_EyeRightY) * MathX.Sin(_EyeRightX),
-      radius * MathX.Cos(_EyeRightY)
-    );
+    float3 leftEyeDirection = (_gazePoint - leftEyePosition).Normalized;
+    float3 rightEyeDirection = (_gazePoint - rightEyePosition).Normalized;
 
-    float3 v = float3.Left;
-    float3 v2 = v * 0.065f;
-    float3 b = v2 * 0.5f;
-    v = float3.Right;
-    v2 = v * 0.065f;
-    float3 b2 = v2 * 0.5f;
-    float3 direction = (leftGazeVector - b).Normalized;
-    float3 direction2 = (rightGazeVector - b2).Normalized;
-    eyes.LeftEye.UpdateWithDirection(in direction);
-    eyes.RightEye.UpdateWithDirection(in direction2);
+    eyes.LeftEye.UpdateWithDirection(in leftEyeDirection);
+    eyes.RightEye.UpdateWithDirection(in rightEyeDirection);
+
     eyes.LeftEye.Openness = _EyeOpenLeft;
     eyes.RightEye.Openness = _EyeOpenRight;
     eyes.LeftEye.Widen = _EyeWideLeft;
@@ -441,22 +437,26 @@ public class VRCFT_Driver : IInputDriver, IDisposable
         switch (address)
         {
           case "/avatar/parameters/v2/EyeLeftX":
-            _EyeLeftX = ReadFloat(message);
+            // _EyeLeftX = ReadFloat(message);
+            UpdateEyeGaze(0, ReadFloat(message), isLeftEye: true);
             break;
           case "/avatar/parameters/v2/EyeLeftY":
-            _EyeLeftY = ReadFloat(message);
+            // _EyeLeftY = ReadFloat(message);
+            UpdateEyeGaze(1, ReadFloat(message), isLeftEye: true);
+            break;
+          case "/avatar/parameters/v2/EyeRightX":
+            // _EyeRightX = ReadFloat(message);
+            UpdateEyeGaze(1, ReadFloat(message), isLeftEye: false);
+            break;
+          case "/avatar/parameters/v2/EyeRightY":
+            // _EyeRightY = ReadFloat(message);
+            UpdateEyeGaze(0, ReadFloat(message), isLeftEye: false);
             break;
           case "/avatar/parameters/v2/EyeOpenLeft":
             _EyeOpenLeft = ReadFloat(message);
             break;
           case "/avatar/parameters/v2/EyeOpenRight":
             _EyeOpenRight = ReadFloat(message);
-            break;
-          case "/avatar/parameters/v2/EyeRightX":
-            _EyeRightX = ReadFloat(message);
-            break;
-          case "/avatar/parameters/v2/EyeRightY":
-            _EyeRightY = ReadFloat(message);
             break;
           case "/avatar/parameters/v2/EyeSquintLeft":
             _EyeSquintLeft = ReadFloat(message);
@@ -741,8 +741,24 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     return (float)message[0];
   }
 
-  private static float3 ReadFloat3(OscMessage message)
+  private void UpdateEyeGaze(int component, float value, bool isLeftEye)
   {
-    return new float3((float)message[0], (float)message[1], (float)message[2]);
+    // Convert from [0, 1] to [-1, 1] range
+    float normalizedValue = (value * 2f) - 1f;
+
+    // Invert X for left eye (since looking left is negative in our coordinate system)
+    if (isLeftEye && component == 0)
+    {
+      normalizedValue *= -1f;
+    }
+
+    _gazePoint = new float3(
+       component == 0 ? normalizedValue : _gazePoint.x,
+       component == 1 ? normalizedValue : _gazePoint.y,
+       -1f  // Ensure Z is always forward
+   );
+
+    // Normalize the gaze point
+    _gazePoint = _gazePoint.Normalized;
   }
 }
