@@ -209,15 +209,15 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   private void OnSettingsChanged()
   {
     EnableEyeTracking = Loader.config.GetValue(Loader.ENABLE_EYE_TRACKING);
-    Loader.Debug("Enable Eye Tracking: " + EnableEyeTracking);
+    Loader.Msg("Enable Eye Tracking: " + EnableEyeTracking);
     EnableFaceTracking = Loader.config.GetValue(Loader.ENABLE_FACE_TRACKING);
-    Loader.Debug("Enable Face Tracking: " + EnableFaceTracking);
+    Loader.Msg("Enable Face Tracking: " + EnableFaceTracking);
     int receiverPort = Loader.config.GetValue(Loader.KEY_RECEIVER_PORT);
-    Loader.Debug("Receiver Port: " + receiverPort);
+    Loader.Msg("Receiver Port: " + receiverPort);
     int senderPort = Loader.config.GetValue(Loader.KEY_SENDER_PORT);
-    Loader.Debug("Sender Port: " + senderPort);
+    Loader.Msg("Sender Port: " + senderPort);
     IPAddress ip = IPAddress.Parse(Loader.config.GetValue(Loader.KEY_IP));
-    Loader.Debug("IP Address: " + ip);
+    Loader.Msg("IP Address: " + ip);
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -361,7 +361,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     mouth.NoseWrinkleRight = _NoseSneerRight;
     mouth.ChinRaiseBottom = _MouthRaiserLower;
     mouth.ChinRaiseTop = _MouthRaiserUpper;
-    // Loader.Debug($"Updated Mouth parameters");
+    // Loader.Msg($"Updated Mouth parameters");
   }
 
   private void UpdateData(OscMessage message)
@@ -374,7 +374,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
     if (message[0] is not float)
     {
-      Loader.Debug("OscMessage is not a float, skipping " + message);
+      // Loader.Msg("OscMessage is not a float, skipping " + message);
       return;
     }
     switch (address[22])
@@ -621,9 +621,6 @@ public class VRCFT_Driver : IInputDriver, IDisposable
             break;
         }
         break;
-      default:
-        Loader.Debug("Could not find address: " + address);
-        break;
     }
   }
 
@@ -740,7 +737,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private static float ReadFloat(OscMessage message)
   {
-    Loader.Debug($"Processing Address {message.Address} {message[0]}");
+    Loader.Msg($"Processing Address {message.Address} {message[0]}");
     return (float)message[0];
   }
 
