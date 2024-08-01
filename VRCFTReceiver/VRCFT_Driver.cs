@@ -752,7 +752,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
     try
     {
-      var message = new OscMessage("/vrcft/settings/forceRelevant", true);
+      var message = new OscMessage("/vrcft/settings/forceRelevant", disposed ? false : true);
 
       oscSender.Send(message);
       Loader.Msg("Sent message to request tracking data for VRCFT OSC");
@@ -766,6 +766,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   public void Dispose()
   {
     disposed = true;
+    RequestTrackingData();
     oscReceiver?.Close();
     oscSender?.Close();
   }
