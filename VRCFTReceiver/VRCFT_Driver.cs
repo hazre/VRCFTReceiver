@@ -306,7 +306,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateEyes(float deltaTime)
   {
-    if (!EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
+    if (!IsTracking(lastEyeTracking) || !EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
     {
       eyes.IsEyeTrackingActive = false;
       eyes.SetTracking(false);
@@ -349,7 +349,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private void UpdateMouth(float deltaTime)
   {
-    if (!EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
+    if (!IsTracking(lastFaceTracking) || !EnableFaceTracking || (!input.VR_Active && !EnableDesktop))
     {
       mouth.IsTracking = false;
       return;
