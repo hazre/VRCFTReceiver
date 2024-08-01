@@ -30,7 +30,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private DateTime? lastFaceTracking;
 
-  public bool EyesReversed;
+  public bool EyesReversed = false;
   public VRCFTEye EyeLeft = new();
   public VRCFTEye EyeRight = new();
   public VRCFTEye EyeCombined => new()
