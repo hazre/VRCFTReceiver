@@ -1,7 +1,7 @@
 using HarmonyLib;
 using ResoniteModLoader;
 using FrooxEngine;
-using Elements.Core;
+using System;
 
 namespace VRCFTReceiver
 {
@@ -32,11 +32,17 @@ namespace VRCFTReceiver
             Harmony harmony = new Harmony("dev.hazre.VRCFTReceiver");
             harmony.PatchAll();
 
-            Engine.Current.OnReady += () =>
+            Engine.Current.RunPostInit(() =>
             {
-                VRCFTDriver = new VRCFT_Driver();
-                Engine.Current.InputInterface.RegisterInputDriver(VRCFTDriver);
-            };
+                try
+                {
+                    Engine.Current.InputInterface.RegisterInputDriver(new VRCFT_Driver());
+                }
+                catch (Exception ex)
+                {
+                    Msg($"Failed to initialize VRCFT driver! Exception: {ex}");
+                }
+            });
         }
 
         [HarmonyPatch(typeof(UserRoot), "OnStart")]
