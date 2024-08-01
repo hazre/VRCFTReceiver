@@ -40,7 +40,7 @@ namespace VRCFTReceiver
                 }
                 catch (Exception ex)
                 {
-                    Msg($"Failed to initialize VRCFT driver! Exception: {ex}");
+                    Error($"Failed to initialize VRCFT driver! Exception: {ex}");
                 }
             });
         }
