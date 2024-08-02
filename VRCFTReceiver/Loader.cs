@@ -35,19 +35,6 @@ namespace VRCFTReceiver
             config = GetConfiguration();
             Harmony harmony = new Harmony("dev.hazre.VRCFTReceiver");
             harmony.PatchAll();
-
-            Engine.Current.RunPostInit(() =>
-            {
-                try
-                {
-                    VRCFTDriver = new VRCFT_Driver();
-                    Engine.Current.InputInterface.RegisterInputDriver(VRCFTDriver);
-                }
-                catch (Exception ex)
-                {
-                    Error($"Failed to initialize VRCFT driver! Exception: {ex}");
-                }
-            });
         }
 
         [HarmonyPatch(typeof(UserRoot), "OnStart")]
@@ -63,6 +50,23 @@ namespace VRCFTReceiver
                     return;
                 };
                 VRCFTDriver.RequestTrackingData();
+            }
+        }
+        [HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
+        [HarmonyPatch(new Type[] { typeof(Engine) })]
+        public class InputInterfaceCtorPatch
+        {
+            public static void Postfix(InputInterface __instance)
+            {
+                try
+                {
+                    VRCFTDriver = new VRCFT_Driver();
+                    __instance.RegisterInputDriver(VRCFTDriver);
+                }
+                catch (Exception ex)
+                {
+                    Error($"Failed to initialize VRCFT driver! Exception: {ex}");
+                }
             }
         }
     }
