@@ -18,9 +18,9 @@ namespace VRCFTReceiver
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<bool> ENABLE_FACE_TRACKING = new("enable_face_tracking", "Enable mouth tracking?", () => true);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<bool> REVERSE_EYES_Y = new("reverse_eyes_y", "Reverse eyetracking y direction", () => false);
+        public static ModConfigurationKey<bool> REVERSE_EYES_Y = new("reverse_eyes_y", "Reverse eye tracking y direction", () => false);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<bool> REVERSE_EYES_X = new("reverse_eyes_x", "Reverse eyetracking x direction", () => false);
+        public static ModConfigurationKey<bool> REVERSE_EYES_X = new("reverse_eyes_x", "Reverse eye tracking x direction", () => false);
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<bool> ENABLE_DESKTOP = new("enable_desktop", "Enable Eye and Face Tracking in Desktop?", () => false);
         public static ModConfiguration config;
