@@ -788,7 +788,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
 
   private static float ReadFloat(OscMessage message)
   {
-    Loader.Msg($"Processing Address {message.Address} {message[0]}");
+    Loader.Debug($"Processing Address {message.Address} {message[0]}");
     return (float)message[0];
   }
 }
@@ -798,7 +798,7 @@ public struct VRCFTEye
 {
   public readonly bool IsTracking => IsValid && Eyelid > 0.1f;
 
-  public readonly bool IsValid => EyeDirection.Magnitude > 0f && MathX.IsValid(EyeDirection);
+  public readonly bool IsValid => EyeDirection.Magnitude > 0f && EyeDirection.SqrMagnitude > 0f && MathX.IsValid(EyeDirection) && EyeDirection.IsValid() && EyeRotation != null;
 
   public float3 EyeDirection
   {
