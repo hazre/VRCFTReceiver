@@ -27,7 +27,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   private bool EnableEyeTracking;
   private bool EnableFaceTracking;
   private bool EnableDesktop = false;
-
+  private static int TrackingTimeout = 10;
   private DateTime? lastEyeTracking;
 
   private DateTime? lastFaceTracking;
@@ -246,6 +246,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     Loader.Msg("Eyes Reversed X: " + EyesReversedX);
     EnableDesktop = Loader.config.GetValue(Loader.ENABLE_DESKTOP);
     Loader.Msg("Enable in Desktop: " + EnableDesktop);
+    TrackingTimeout = Loader.config.GetValue(Loader.TRACKING_TIMEOUT_SECONDS);
+    Loader.Msg("Tracking timeout : " + TrackingTimeout + " seconds");
     OscReceiver currentOscReceiver = this.oscReceiver;
     OscSender currentOscSender = this.oscSender;
     if ((currentOscReceiver == null || currentOscReceiver.Port != receiverPort || currentOscReceiver.LocalAddress != ip) && receiverPort != 0 && ip != null)
@@ -779,7 +781,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     {
       return false;
     }
-    if ((DateTime.UtcNow - timestamp.Value).TotalSeconds > 10.0)
+    if ((DateTime.UtcNow - timestamp.Value).TotalSeconds > TrackingTimeout)
     {
       return false;
     }
