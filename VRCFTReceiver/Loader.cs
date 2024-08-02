@@ -24,7 +24,7 @@ namespace VRCFTReceiver
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<bool> ENABLE_DESKTOP = new("enable_desktop", "Enable Eye and Face Tracking in Desktop?", () => false);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> TRACKING_TIMEOUT_SECONDS = new("tracking_timeout_seconds", "Seconds until tracking is considered inactive", () => 10);
+        public static ModConfigurationKey<int> TRACKING_TIMEOUT_SECONDS = new("tracking_timeout_seconds", "Seconds until tracking is considered inactive", () => 5);
         public static ModConfiguration config;
         public static VRCFT_Driver VRCFTDriver;
         public override string Name => "VRCFTReceiver";

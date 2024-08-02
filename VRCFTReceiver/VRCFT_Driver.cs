@@ -27,7 +27,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   private bool EnableEyeTracking;
   private bool EnableFaceTracking;
   private bool EnableDesktop = false;
-  private static int TrackingTimeout = 10;
+  private static int TrackingTimeout = 5;
   private DateTime? lastEyeTracking;
 
   private DateTime? lastFaceTracking;
