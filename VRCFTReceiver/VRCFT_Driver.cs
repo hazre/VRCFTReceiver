@@ -475,7 +475,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
         }
         break;
       case 'E':
-        lastEyeTracking = DateTime.Now;
+        lastEyeTracking = DateTime.UtcNow;
         switch (address)
         {
           case "/avatar/parameters/v2/EyeLeftX":
@@ -583,7 +583,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
         }
         break;
       case 'M':
-        lastFaceTracking = DateTime.Now;
+        lastFaceTracking = DateTime.UtcNow;
         switch (address)
         {
           case "/avatar/parameters/v2/MouthClosed":
