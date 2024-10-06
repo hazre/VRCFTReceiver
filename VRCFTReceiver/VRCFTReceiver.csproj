@@ -6,7 +6,7 @@
     <RootNamespace>VRCFTReceiver</RootNamespace>
     <AssemblyTitle>VRCFTReceiver</AssemblyTitle>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <LangVersion>10</LangVersion>
+    <LangVersion>12</LangVersion>
     <TargetFramework>net472</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -39,6 +39,9 @@
       <HintPath>$(GamePath)Libraries\ResoniteModLoader.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
