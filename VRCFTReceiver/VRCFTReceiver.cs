@@ -41,11 +41,11 @@ namespace VRCFTReceiver
         {
             public static void Postfix(UserRoot __instance)
             {
-                UniLog.Log($"Starting UserRoot");
+                UniLog.Log($"[VRCFTReceiver] Starting UserRoot");
                 if (!__instance.ActiveUser.IsLocalUser) return;
                 if (VRCFTDriver == null)
                 {
-                    UniLog.Warning("VRCFTReceiver driver is not initialized!");
+                    UniLog.Warning("[VRCFTReceiver] Driver is not initialized!");
                     return;
                 };
                 VRCFTDriver.AvatarChange();
@@ -64,7 +64,7 @@ namespace VRCFTReceiver
                 }
                 catch (Exception ex)
                 {
-                    Error($"Failed to initialize VRCFT driver! Exception: {ex}");
+                    UniLog.Error($"[VRCFTReceiver] Failed to initialize VRCFT driver! Exception: {ex}");
                 }
             }
         }

@@ -9,12 +9,12 @@ namespace VRCFTReceiver
 {
   public class OSCClient
   {
-    private static bool _oscSocketState;
-    public static readonly Dictionary<string, float> FTDataWithAddress = [];
+    private bool _oscSocketState;
+    public static readonly Dictionary<string, float> FTData = [];
 
-    private static OscReceiver _receiver;
-    private static Thread _receiveThread;
-    private static CancellationTokenSource _cancellationTokenSource;
+    public OscReceiver receiver { get; private set; }
+    private Thread receiveThread;
+    private CancellationTokenSource cancellationTokenSource;
 
     private const int DefaultPort = 9000;
 
@@ -26,40 +26,35 @@ namespace VRCFTReceiver
 
     public OSCClient(IPAddress ip, int? port = null)
     {
-      if (_receiver != null)
-      {
-        return;
-      }
-
       var listenPort = port ?? DefaultPort;
-      _receiver = new OscReceiver(ip, listenPort);
+      receiver = new OscReceiver(ip, listenPort);
 
       foreach (var address in Expressions.AllAddresses)
       {
-        FTDataWithAddress[address] = 0f;
+        FTData[address] = 0f;
       }
 
       _oscSocketState = true;
-      _receiver.Connect();
+      receiver.Connect();
 
-      _cancellationTokenSource = new CancellationTokenSource();
-      _receiveThread = new Thread(ListenLoop);
-      _receiveThread.Start(_cancellationTokenSource.Token);
+      cancellationTokenSource = new CancellationTokenSource();
+      receiveThread = new Thread(ListenLoop);
+      receiveThread.Start(cancellationTokenSource.Token);
     }
 
-    private static void ListenLoop(object obj)
+    private void ListenLoop(object obj)
     {
       CancellationToken cancellationToken = (CancellationToken)obj;
-      UniLog.Log("Started VRCFTReceiver loop");
+      UniLog.Log("[VRCFTReceiver] Started OSCClient ListenLoop");
 
       while (!cancellationToken.IsCancellationRequested && _oscSocketState)
       {
         try
         {
-          if (_receiver.State != OscSocketState.Connected)
+          if (receiver.State != OscSocketState.Connected)
             break;
 
-          OscPacket packet = _receiver.Receive();
+          OscPacket packet = receiver.Receive();
           if (packet is OscBundle bundle)
           {
             foreach (var message in bundle)
@@ -74,16 +69,16 @@ namespace VRCFTReceiver
         }
         catch (Exception ex)
         {
-          UniLog.Log($"Error in OSC receive loop: {ex.Message}");
+          UniLog.Log($"[VRCFTReceiver] Error in OSCClient ListenLoop: {ex.Message}");
         }
       }
 
-      UniLog.Log("VRCFTReceiver loop ended");
+      UniLog.Log("[VRCFTReceiver] OSCClient ListenLoop ended");
     }
 
-    private static void ProcessOscMessage(OscMessage message)
+    private void ProcessOscMessage(OscMessage message)
     {
-      if (message == null || !FTDataWithAddress.ContainsKey(message.Address))
+      if (message == null || !FTData.ContainsKey(message.Address))
         return;
 
       if (message.Count > 0)
@@ -91,7 +86,7 @@ namespace VRCFTReceiver
         var value = message[0];
         if (value is float floatValue)
         {
-          FTDataWithAddress[message.Address] = floatValue;
+          FTData[message.Address] = floatValue;
 
           // Update tracking timestamps
           if (message.Address.StartsWith(EYE_PREFIX))
@@ -105,7 +100,7 @@ namespace VRCFTReceiver
         }
         else
         {
-          UniLog.Log($"Unknown OSC type for address {message.Address}: {value.GetType()}");
+          UniLog.Log($"[VRCFTReceiver] Unknown OSC type for address {message.Address}: {value.GetType()}");
         }
       }
     }
@@ -119,24 +114,24 @@ namespace VRCFTReceiver
           sender.Connect();
           sender.Send(new OscMessage(address, value));
         }
-        UniLog.Log($"Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
+        UniLog.Log($"[VRCFTReceiver] Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
       }
       catch (Exception ex)
       {
-        UniLog.Log($"Error sending OSC message: {ex.Message}");
+        UniLog.Log($"[VRCFTReceiver] Error sending OSC message: {ex.Message}");
       }
     }
 
     public void Teardown()
     {
-      UniLog.Log("VRCFTReceiver teardown called");
+      UniLog.Log("[VRCFTReceiver] OSCClient teardown called");
       LastEyeTracking = null;
       LastFaceTracking = null;
       _oscSocketState = false;
-      _cancellationTokenSource?.Cancel();
-      _receiver?.Close();
-      _receiveThread?.Join(TimeSpan.FromSeconds(5));
-      UniLog.Log("VRCFTReceiver teardown completed");
+      cancellationTokenSource?.Cancel();
+      receiver?.Close();
+      receiveThread?.Join(TimeSpan.FromSeconds(5));
+      UniLog.Log("[VRCFTReceiver] OSCClient teardown completed");
     }
   }
 }

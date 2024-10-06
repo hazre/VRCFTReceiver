@@ -9,7 +9,7 @@ namespace VRCFTReceiver
 {
   public class OSCQuery
   {
-    public OSCQueryService service;
+    public OSCQueryService service { get; private set; }
     public readonly List<OSCQueryServiceProfile> profiles = [];
     private CancellationTokenSource _cancellationTokenSource;
 
@@ -27,7 +27,7 @@ namespace VRCFTReceiver
         .AdvertiseOSC()
         .Build();
 
-      UniLog.Log($"Started OSCQueryService {service.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{service.HostIP}:{tcpPort}");
+      UniLog.Log($"[VRCFTReceiver] Started OSCQueryService {service.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{service.HostIP}:{tcpPort}");
 
       service.AddEndpoint<string>("/avatar/change", Attributes.AccessValues.ReadWrite, ["default"]);
 
@@ -46,8 +46,7 @@ namespace VRCFTReceiver
         return;
       }
       profiles.Add(profile);
-      UniLog.Log($"Added {profile.name} to list of profiles, at address http://{profile.address}:{profile.port}");
-      UniLog.Log($"Profiles Count: {profiles.Count}");
+      UniLog.Log($"[VRCFTReceiver] Added {profile.name} to list of OSCQuery profiles, at address http://{profile.address}:{profile.port}");
     }
 
     private void AddParametersToEndpoint()
@@ -75,7 +74,7 @@ namespace VRCFTReceiver
           }
           catch (Exception ex)
           {
-            UniLog.Log($"Error in AutoRefreshServices: {ex.Message}");
+            UniLog.Log($"[VRCFTReceiver] Error in AutoRefreshServices: {ex.Message}");
           }
         }
       }, cancellationToken);
@@ -83,11 +82,11 @@ namespace VRCFTReceiver
 
     public void Teardown()
     {
-      UniLog.Log("VRCFTReceiver OSCQueryService teardown called");
+      UniLog.Log("[VRCFTReceiver] OSCQuery teardown called");
       _cancellationTokenSource.Cancel();
       _cancellationTokenSource.Dispose();
       service.Dispose();
-      UniLog.Log("VRCFTReceiver OSCQueryService teardown completed");
+      UniLog.Log("[VRCFTReceiver] OSCQuery teardown completed");
     }
   }
 }

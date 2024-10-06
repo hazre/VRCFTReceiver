@@ -1,6 +1,5 @@
 using System;
 using System.Net;
-using System.Threading;
 using Elements.Core;
 using FrooxEngine;
 using Rug.Osc;
@@ -16,6 +15,8 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   private readonly object _lock = new();
   private OSCClient _OSCClient;
   private OSCQuery _OSCQuery;
+  private IPAddress IP;
+  private int ReceiverPort;
   private bool EnableEyeTracking;
   private bool EnableFaceTracking;
   private static int TrackingTimeout;
@@ -87,45 +88,52 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   {
     EnableEyeTracking = VRCFTReceiver.config.GetValue(VRCFTReceiver.ENABLE_EYE_TRACKING);
     EnableFaceTracking = VRCFTReceiver.config.GetValue(VRCFTReceiver.ENABLE_FACE_TRACKING);
-    int receiverPort = VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_RECEIVER_PORT);
-    IPAddress ip = IPAddress.Parse(VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_IP));
+    ReceiverPort = VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_RECEIVER_PORT);
+    IP = IPAddress.Parse(VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_IP));
     EyesReversedY = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_Y);
     EyesReversedX = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_X);
     TrackingTimeout = VRCFTReceiver.config.GetValue(VRCFTReceiver.TRACKING_TIMEOUT_SECONDS);
-    if (receiverPort != 0 && ip != null)
+    InitializeOSCConnection();
+  }
+  private void InitializeOSCConnection()
+  {
+    if (ReceiverPort != 0 && IP != null)
     {
       try
       {
         if (_OSCClient != null) _OSCClient.Teardown();
-        _OSCClient = new OSCClient(ip, receiverPort);
+        _OSCClient = new OSCClient(IP, ReceiverPort);
         if (_OSCQuery != null) _OSCQuery.Teardown();
-        _OSCQuery = new OSCQuery(receiverPort);
+        _OSCQuery = new OSCQuery(ReceiverPort);
       }
       catch (Exception ex)
       {
-        UniLog.Error("Exception when starting OSCClient:\n" + ex);
+        UniLog.Error("[VRCFTReceiver] Exception when starting OSCClient:\n" + ex);
       }
     }
+    else
+    {
+      UniLog.Warning("[VRCFTReceiver] OSCConnection not started because port or IP is not valid");
+    }
+  }
+  private bool IsOSCConnectionActive()
+  {
+    if (_OSCClient != null || _OSCClient.receiver != null || _OSCClient.receiver.State != OscSocketState.Connected)
+    {
+      return false;
+    }
+    if (_OSCQuery != null || _OSCQuery.service != null)
+    {
+      return false;
+    }
+
+    return true;
   }
   public void UpdateInputs(float deltaTime)
   {
-    try
-    {
-      UpdateEyes(deltaTime);
-    }
-    catch (Exception ex)
-    {
-      UniLog.Error($"Failed to UpdateEyes! Exception: {ex}");
-    }
-
-    try
-    {
-      UpdateMouth(deltaTime);
-    }
-    catch (Exception ex)
-    {
-      UniLog.Error($"Failed to UpdateMouth! Exception: {ex}");
-    }
+    if (!IsOSCConnectionActive()) InitializeOSCConnection();
+    UpdateEyes(deltaTime);
+    UpdateMouth(deltaTime);
   }
   private void UpdateEyes(float deltaTime)
   {
@@ -142,32 +150,32 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       eyes.SetTracking(true);
 
       EyeLeft.SetDirectionFromXY(
-        X: EyesReversedX ? -OSCClient.FTDataWithAddress[Expressions.EyeLeftX] : OSCClient.FTDataWithAddress[Expressions.EyeLeftX],
-        Y: EyesReversedY ? -OSCClient.FTDataWithAddress[Expressions.EyeLeftY] : OSCClient.FTDataWithAddress[Expressions.EyeLeftY]
+        X: EyesReversedX ? -OSCClient.FTData[Expressions.EyeLeftX] : OSCClient.FTData[Expressions.EyeLeftX],
+        Y: EyesReversedY ? -OSCClient.FTData[Expressions.EyeLeftY] : OSCClient.FTData[Expressions.EyeLeftY]
       );
       EyeRight.SetDirectionFromXY(
-        X: EyesReversedX ? -OSCClient.FTDataWithAddress[Expressions.EyeRightX] : OSCClient.FTDataWithAddress[Expressions.EyeRightX],
-        Y: EyesReversedY ? -OSCClient.FTDataWithAddress[Expressions.EyeRightY] : OSCClient.FTDataWithAddress[Expressions.EyeRightY]
+        X: EyesReversedX ? -OSCClient.FTData[Expressions.EyeRightX] : OSCClient.FTData[Expressions.EyeRightX],
+        Y: EyesReversedY ? -OSCClient.FTData[Expressions.EyeRightY] : OSCClient.FTData[Expressions.EyeRightY]
       );
 
       UpdateEye(EyeLeft, eyes.LeftEye);
       UpdateEye(EyeRight, eyes.RightEye);
       UpdateEye(EyeCombined, eyes.CombinedEye);
 
-      eyes.LeftEye.Openness = OSCClient.FTDataWithAddress[Expressions.EyeOpenLeft];
-      eyes.RightEye.Openness = OSCClient.FTDataWithAddress[Expressions.EyeOpenRight];
-      eyes.LeftEye.Widen = OSCClient.FTDataWithAddress[Expressions.EyeWideLeft];
-      eyes.RightEye.Widen = OSCClient.FTDataWithAddress[Expressions.EyeWideRight];
-      eyes.LeftEye.Squeeze = OSCClient.FTDataWithAddress[Expressions.EyeSquintLeft];
-      eyes.RightEye.Squeeze = OSCClient.FTDataWithAddress[Expressions.EyeSquintRight];
+      eyes.LeftEye.Openness = OSCClient.FTData[Expressions.EyeOpenLeft];
+      eyes.RightEye.Openness = OSCClient.FTData[Expressions.EyeOpenRight];
+      eyes.LeftEye.Widen = OSCClient.FTData[Expressions.EyeWideLeft];
+      eyes.RightEye.Widen = OSCClient.FTData[Expressions.EyeWideRight];
+      eyes.LeftEye.Squeeze = OSCClient.FTData[Expressions.EyeSquintLeft];
+      eyes.RightEye.Squeeze = OSCClient.FTData[Expressions.EyeSquintRight];
 
-      float leftBrowLowerer = OSCClient.FTDataWithAddress[Expressions.BrowPinchLeft] - OSCClient.FTDataWithAddress[Expressions.BrowLowererLeft];
-      eyes.LeftEye.InnerBrowVertical = OSCClient.FTDataWithAddress[Expressions.BrowInnerUpLeft] - leftBrowLowerer;
-      eyes.LeftEye.OuterBrowVertical = OSCClient.FTDataWithAddress[Expressions.BrowOuterUpLeft] - leftBrowLowerer;
+      float leftBrowLowerer = OSCClient.FTData[Expressions.BrowPinchLeft] - OSCClient.FTData[Expressions.BrowLowererLeft];
+      eyes.LeftEye.InnerBrowVertical = OSCClient.FTData[Expressions.BrowInnerUpLeft] - leftBrowLowerer;
+      eyes.LeftEye.OuterBrowVertical = OSCClient.FTData[Expressions.BrowOuterUpLeft] - leftBrowLowerer;
 
-      float rightBrowLowerer = OSCClient.FTDataWithAddress[Expressions.BrowPinchRight] - OSCClient.FTDataWithAddress[Expressions.BrowLowererRight];
-      eyes.RightEye.InnerBrowVertical = OSCClient.FTDataWithAddress[Expressions.BrowInnerUpRight] - rightBrowLowerer;
-      eyes.RightEye.OuterBrowVertical = OSCClient.FTDataWithAddress[Expressions.BrowOuterUpRight] - rightBrowLowerer;
+      float rightBrowLowerer = OSCClient.FTData[Expressions.BrowPinchRight] - OSCClient.FTData[Expressions.BrowLowererRight];
+      eyes.RightEye.InnerBrowVertical = OSCClient.FTData[Expressions.BrowInnerUpRight] - rightBrowLowerer;
+      eyes.RightEye.OuterBrowVertical = OSCClient.FTData[Expressions.BrowOuterUpRight] - rightBrowLowerer;
 
       eyes.ComputeCombinedEyeParameters();
       eyes.FinishUpdate();
@@ -191,50 +199,50 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     lock (_lock)
     {
       mouth.IsTracking = true;
-      mouth.MouthLeftSmileFrown = OSCClient.FTDataWithAddress[Expressions.MouthSmileLeft] - OSCClient.FTDataWithAddress[Expressions.MouthFrownLeft];
-      mouth.MouthRightSmileFrown = OSCClient.FTDataWithAddress[Expressions.MouthSmileRight] - OSCClient.FTDataWithAddress[Expressions.MouthFrownRight];
-      mouth.MouthLeftDimple = OSCClient.FTDataWithAddress[Expressions.MouthDimpleLeft];
-      mouth.MouthRightDimple = OSCClient.FTDataWithAddress[Expressions.MouthDimpleRight];
-      mouth.CheekLeftPuffSuck = OSCClient.FTDataWithAddress[Expressions.CheekPuffSuckLeft];
-      mouth.CheekRightPuffSuck = OSCClient.FTDataWithAddress[Expressions.CheekPuffSuckRight];
-      mouth.CheekLeftRaise = OSCClient.FTDataWithAddress[Expressions.CheekSquintLeft];
-      mouth.CheekRightRaise = OSCClient.FTDataWithAddress[Expressions.CheekSquintRight];
-      mouth.LipUpperLeftRaise = OSCClient.FTDataWithAddress[Expressions.MouthUpperUpLeft];
-      mouth.LipUpperRightRaise = OSCClient.FTDataWithAddress[Expressions.MouthUpperUpRight];
-      mouth.LipLowerLeftRaise = OSCClient.FTDataWithAddress[Expressions.MouthLowerDownLeft];
-      mouth.LipLowerRightRaise = OSCClient.FTDataWithAddress[Expressions.MouthLowerDownRight];
-      mouth.MouthPoutLeft = OSCClient.FTDataWithAddress[Expressions.LipPuckerLowerLeft] - OSCClient.FTDataWithAddress[Expressions.LipPuckerUpperLeft];
-      mouth.MouthPoutRight = OSCClient.FTDataWithAddress[Expressions.LipPuckerLowerRight] - OSCClient.FTDataWithAddress[Expressions.LipPuckerUpperRight];
-      mouth.LipUpperHorizontal = OSCClient.FTDataWithAddress[Expressions.MouthUpperX];
-      mouth.LipLowerHorizontal = OSCClient.FTDataWithAddress[Expressions.MouthLowerX];
-      mouth.LipTopLeftOverturn = OSCClient.FTDataWithAddress[Expressions.LipFunnelUpperLeft];
-      mouth.LipTopRightOverturn = OSCClient.FTDataWithAddress[Expressions.LipFunnelUpperRight];
-      mouth.LipBottomLeftOverturn = OSCClient.FTDataWithAddress[Expressions.LipFunnelLowerLeft];
-      mouth.LipBottomRightOverturn = OSCClient.FTDataWithAddress[Expressions.LipFunnelLowerRight];
-      mouth.LipTopLeftOverUnder = -OSCClient.FTDataWithAddress[Expressions.LipSuckUpperLeft];
-      mouth.LipTopRightOverUnder = -OSCClient.FTDataWithAddress[Expressions.LipSuckUpperRight];
-      mouth.LipBottomLeftOverUnder = -OSCClient.FTDataWithAddress[Expressions.LipSuckLowerLeft];
-      mouth.LipBottomRightOverUnder = -OSCClient.FTDataWithAddress[Expressions.LipSuckLowerRight];
-      mouth.LipLeftStretchTighten = OSCClient.FTDataWithAddress[Expressions.MouthStretchLeft] - OSCClient.FTDataWithAddress[Expressions.MouthTightenerLeft];
-      mouth.LipRightStretchTighten = OSCClient.FTDataWithAddress[Expressions.MouthStretchRight] - OSCClient.FTDataWithAddress[Expressions.MouthTightenerRight];
-      mouth.LipsLeftPress = OSCClient.FTDataWithAddress[Expressions.MouthPressLeft];
-      mouth.LipsRightPress = OSCClient.FTDataWithAddress[Expressions.MouthPressRight];
+      mouth.MouthLeftSmileFrown = OSCClient.FTData[Expressions.MouthSmileLeft] - OSCClient.FTData[Expressions.MouthFrownLeft];
+      mouth.MouthRightSmileFrown = OSCClient.FTData[Expressions.MouthSmileRight] - OSCClient.FTData[Expressions.MouthFrownRight];
+      mouth.MouthLeftDimple = OSCClient.FTData[Expressions.MouthDimpleLeft];
+      mouth.MouthRightDimple = OSCClient.FTData[Expressions.MouthDimpleRight];
+      mouth.CheekLeftPuffSuck = OSCClient.FTData[Expressions.CheekPuffSuckLeft];
+      mouth.CheekRightPuffSuck = OSCClient.FTData[Expressions.CheekPuffSuckRight];
+      mouth.CheekLeftRaise = OSCClient.FTData[Expressions.CheekSquintLeft];
+      mouth.CheekRightRaise = OSCClient.FTData[Expressions.CheekSquintRight];
+      mouth.LipUpperLeftRaise = OSCClient.FTData[Expressions.MouthUpperUpLeft];
+      mouth.LipUpperRightRaise = OSCClient.FTData[Expressions.MouthUpperUpRight];
+      mouth.LipLowerLeftRaise = OSCClient.FTData[Expressions.MouthLowerDownLeft];
+      mouth.LipLowerRightRaise = OSCClient.FTData[Expressions.MouthLowerDownRight];
+      mouth.MouthPoutLeft = OSCClient.FTData[Expressions.LipPuckerLowerLeft] - OSCClient.FTData[Expressions.LipPuckerUpperLeft];
+      mouth.MouthPoutRight = OSCClient.FTData[Expressions.LipPuckerLowerRight] - OSCClient.FTData[Expressions.LipPuckerUpperRight];
+      mouth.LipUpperHorizontal = OSCClient.FTData[Expressions.MouthUpperX];
+      mouth.LipLowerHorizontal = OSCClient.FTData[Expressions.MouthLowerX];
+      mouth.LipTopLeftOverturn = OSCClient.FTData[Expressions.LipFunnelUpperLeft];
+      mouth.LipTopRightOverturn = OSCClient.FTData[Expressions.LipFunnelUpperRight];
+      mouth.LipBottomLeftOverturn = OSCClient.FTData[Expressions.LipFunnelLowerLeft];
+      mouth.LipBottomRightOverturn = OSCClient.FTData[Expressions.LipFunnelLowerRight];
+      mouth.LipTopLeftOverUnder = -OSCClient.FTData[Expressions.LipSuckUpperLeft];
+      mouth.LipTopRightOverUnder = -OSCClient.FTData[Expressions.LipSuckUpperRight];
+      mouth.LipBottomLeftOverUnder = -OSCClient.FTData[Expressions.LipSuckLowerLeft];
+      mouth.LipBottomRightOverUnder = -OSCClient.FTData[Expressions.LipSuckLowerRight];
+      mouth.LipLeftStretchTighten = OSCClient.FTData[Expressions.MouthStretchLeft] - OSCClient.FTData[Expressions.MouthTightenerLeft];
+      mouth.LipRightStretchTighten = OSCClient.FTData[Expressions.MouthStretchRight] - OSCClient.FTData[Expressions.MouthTightenerRight];
+      mouth.LipsLeftPress = OSCClient.FTData[Expressions.MouthPressLeft];
+      mouth.LipsRightPress = OSCClient.FTData[Expressions.MouthPressRight];
       mouth.Jaw = new float3(
-        OSCClient.FTDataWithAddress[Expressions.JawRight] - OSCClient.FTDataWithAddress[Expressions.JawLeft],
-        -OSCClient.FTDataWithAddress[Expressions.MouthClosed],
-        OSCClient.FTDataWithAddress[Expressions.JawForward]
+        OSCClient.FTData[Expressions.JawRight] - OSCClient.FTData[Expressions.JawLeft],
+        -OSCClient.FTData[Expressions.MouthClosed],
+        OSCClient.FTData[Expressions.JawForward]
       );
-      mouth.JawOpen = MathX.Clamp01(OSCClient.FTDataWithAddress[Expressions.JawOpen] - OSCClient.FTDataWithAddress[Expressions.MouthClosed]);
+      mouth.JawOpen = MathX.Clamp01(OSCClient.FTData[Expressions.JawOpen] - OSCClient.FTData[Expressions.MouthClosed]);
       mouth.Tongue = new float3(
-        OSCClient.FTDataWithAddress[Expressions.TongueX],
-        OSCClient.FTDataWithAddress[Expressions.TongueY],
-        OSCClient.FTDataWithAddress[Expressions.TongueOut]
+        OSCClient.FTData[Expressions.TongueX],
+        OSCClient.FTData[Expressions.TongueY],
+        OSCClient.FTData[Expressions.TongueOut]
       );
-      mouth.TongueRoll = OSCClient.FTDataWithAddress[Expressions.TongueRoll];
-      mouth.NoseWrinkleLeft = OSCClient.FTDataWithAddress[Expressions.NoseSneerLeft];
-      mouth.NoseWrinkleRight = OSCClient.FTDataWithAddress[Expressions.NoseSneerRight];
-      mouth.ChinRaiseBottom = OSCClient.FTDataWithAddress[Expressions.MouthRaiserLower];
-      mouth.ChinRaiseTop = OSCClient.FTDataWithAddress[Expressions.MouthRaiserUpper];
+      mouth.TongueRoll = OSCClient.FTData[Expressions.TongueRoll];
+      mouth.NoseWrinkleLeft = OSCClient.FTData[Expressions.NoseSneerLeft];
+      mouth.NoseWrinkleRight = OSCClient.FTData[Expressions.NoseSneerRight];
+      mouth.ChinRaiseBottom = OSCClient.FTData[Expressions.MouthRaiserLower];
+      mouth.ChinRaiseTop = OSCClient.FTData[Expressions.MouthRaiserUpper];
     }
   }
   public void Dispose()
