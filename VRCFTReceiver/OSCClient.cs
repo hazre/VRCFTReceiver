@@ -10,7 +10,7 @@ namespace VRCFTReceiver
   public class OSCClient
   {
     private bool _oscSocketState;
-    public static readonly Dictionary<string, float> FTData = [];
+    public static readonly Dictionary<string, float> FTData = new Dictionary<string, float> { };
 
     public OscReceiver receiver { get; private set; }
     private Thread receiveThread;
@@ -26,35 +26,46 @@ namespace VRCFTReceiver
 
     public OSCClient(IPAddress ip, int? port = null)
     {
+      UniLog.Log("[VRCFTReceiver] start OSCClient");
       var listenPort = port ?? DefaultPort;
       receiver = new OscReceiver(ip, listenPort);
+      UniLog.Log("[VRCFTReceiver] created OscReceiver");
 
       foreach (var address in Expressions.AllAddresses)
       {
         FTData[address] = 0f;
       }
+      UniLog.Log("[VRCFTReceiver] assigned AllAddresses");
 
       _oscSocketState = true;
       receiver.Connect();
+      UniLog.Log("[VRCFTReceiver] connect OscReceiver");
 
+      UniLog.Log("[VRCFTReceiver] start cancellationTokenSource");
       cancellationTokenSource = new CancellationTokenSource();
+      UniLog.Log("[VRCFTReceiver] new receiveThread");
       receiveThread = new Thread(ListenLoop);
+      UniLog.Log("[VRCFTReceiver] start receiveThread");
       receiveThread.Start(cancellationTokenSource.Token);
     }
 
     private void ListenLoop(object obj)
     {
-      CancellationToken cancellationToken = (CancellationToken)obj;
       UniLog.Log("[VRCFTReceiver] Started OSCClient ListenLoop");
+      CancellationToken cancellationToken = (CancellationToken)obj;
 
       while (!cancellationToken.IsCancellationRequested && _oscSocketState)
       {
         try
         {
           if (receiver.State != OscSocketState.Connected)
+          {
+            UniLog.Log($"[VRCFTReceiver] OscReceiver state {receiver.State}, breaking..");
             break;
+          }
 
           OscPacket packet = receiver.Receive();
+          UniLog.Log($"[VRCFTReceiver] OscReceiver received packet");
           if (packet is OscBundle bundle)
           {
             foreach (var message in bundle)
@@ -78,6 +89,7 @@ namespace VRCFTReceiver
 
     private void ProcessOscMessage(OscMessage message)
     {
+      UniLog.Log($"[VRCFTReceiver] start ProcessOscMessage");
       if (message == null || !FTData.ContainsKey(message.Address))
         return;
 

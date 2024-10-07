@@ -38,9 +38,6 @@
       <HintPath>$(GamePath)ResoniteModLoader.dll</HintPath>
       <HintPath>$(GamePath)Libraries\ResoniteModLoader.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net.Http" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
   </ItemGroup>
 

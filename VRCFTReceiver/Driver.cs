@@ -7,7 +7,7 @@ using Rug.Osc;
 namespace VRCFTReceiver;
 
 // based on FrooxEngine's Steam Link OSC implementation
-public class VRCFT_Driver : IInputDriver, IDisposable
+public class Driver : IInputDriver, IDisposable
 {
   private InputInterface input;
   private Eyes eyes;
@@ -47,22 +47,23 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   public int UpdateOrder => 100;
   public void CollectDeviceInfos(DataTreeList list)
   {
-    DataTreeDictionary dataTreeDictionary = new DataTreeDictionary();
-    dataTreeDictionary.Add("Name", "VRCFaceTracking OSC");
-    dataTreeDictionary.Add("Type", "Eye Tracking");
-    dataTreeDictionary.Add("Model", "VRCFaceTracking OSC");
-    list.Add(dataTreeDictionary);
-    dataTreeDictionary.Add("Name", "VRCFaceTracking OSC");
-    dataTreeDictionary.Add("Type", "Lip Tracking");
-    dataTreeDictionary.Add("Model", "VRCFaceTracking OSC");
-    list.Add(dataTreeDictionary);
+    DataTreeDictionary eyeDict = new();
+    eyeDict.Add("Name", "VRCFaceTracking OSC");
+    eyeDict.Add("Type", "Eye Tracking");
+    eyeDict.Add("Model", "VRCFaceTracking OSC");
+    list.Add(eyeDict);
+    DataTreeDictionary mouthDict = new();
+    mouthDict.Add("Name", "VRCFaceTracking OSC");
+    mouthDict.Add("Type", "Lip Tracking");
+    mouthDict.Add("Model", "VRCFaceTracking OSC");
+    list.Add(mouthDict);
   }
   public void RegisterInputs(InputInterface inputInterface)
   {
     input = inputInterface;
     eyes = new Eyes(inputInterface, "VRCFaceTracking OSC", supportsPupilTracking: false);
-    mouth = new Mouth(inputInterface, "VRCFaceTracking OSC",
-    [
+    mouth = new Mouth(inputInterface, "VRCFaceTracking OSC", new MouthParameterGroup[16]
+    {
       MouthParameterGroup.JawPose,
       MouthParameterGroup.JawOpen,
       MouthParameterGroup.TonguePose,
@@ -79,10 +80,11 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       MouthParameterGroup.CheekRaise,
       MouthParameterGroup.ChinRaise,
       MouthParameterGroup.NoseWrinkle
-    ]);
+  });
     OnSettingsChanged();
     VRCFTReceiver.config.OnThisConfigurationChanged += (_) => OnSettingsChanged();
     input.Engine.OnShutdown += Dispose;
+    UniLog.Log("[VRCFTReceiver] Finished Initializing VRCFT driver");
   }
   private void OnSettingsChanged()
   {
@@ -93,10 +95,12 @@ public class VRCFT_Driver : IInputDriver, IDisposable
     EyesReversedY = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_Y);
     EyesReversedX = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_X);
     TrackingTimeout = VRCFTReceiver.config.GetValue(VRCFTReceiver.TRACKING_TIMEOUT_SECONDS);
+    UniLog.Log($"[VRCFTReceiver] Starting VRCFTReceiver with these settings: EnableEyeTracking: {EnableEyeTracking}, EnableFaceTracking: {EnableFaceTracking},  ReceiverPort:{ReceiverPort}, IP: {IP}, EyesReversedY: {EyesReversedY}, EyesReversedX: {EyesReversedX}, TrackingTimeout: {TrackingTimeout}");
     InitializeOSCConnection();
   }
   private void InitializeOSCConnection()
   {
+    UniLog.Log("[VRCFTReceiver] Initializing OSCConnection...");
     if (ReceiverPort != 0 && IP != null)
     {
       try
@@ -108,7 +112,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       }
       catch (Exception ex)
       {
-        UniLog.Error("[VRCFTReceiver] Exception when starting OSCClient:\n" + ex);
+        UniLog.Error("[VRCFTReceiver] Exception when starting OSCConnection:\n" + ex);
       }
     }
     else
@@ -118,12 +122,14 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   }
   private bool IsOSCConnectionActive()
   {
-    if (_OSCClient != null || _OSCClient.receiver != null || _OSCClient.receiver.State != OscSocketState.Connected)
+    if (_OSCClient != null || _OSCClient.receiver != null)
     {
+      UniLog.Log("[VRCFTReceiver] OSCConnection OSCClient is not ready");
       return false;
     }
     if (_OSCQuery != null || _OSCQuery.service != null)
     {
+      UniLog.Log("[VRCFTReceiver] OSCConnection OSCQuery is not ready");
       return false;
     }
 
@@ -131,12 +137,22 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   }
   public void UpdateInputs(float deltaTime)
   {
-    if (!IsOSCConnectionActive()) InitializeOSCConnection();
-    UpdateEyes(deltaTime);
-    UpdateMouth(deltaTime);
+    // UniLog.Log("[VRCFTReceiver] start UpdateInputs");
+    if (!IsOSCConnectionActive()) return;
+    try
+    {
+      UpdateEyes(deltaTime);
+      UpdateMouth(deltaTime);
+    }
+    catch (Exception ex)
+    {
+      UniLog.Error($"[VRCFTReceiver] UpdateInputs Failed! Exception: {ex}");
+    }
+    // UniLog.Log("[VRCFTReceiver] end UpdateInputs");
   }
   private void UpdateEyes(float deltaTime)
   {
+    UniLog.Log("[VRCFTReceiver] start UpdateEyes");
     if (!IsTracking(OSCClient.LastEyeTracking) || !EnableEyeTracking)
     {
       eyes.IsEyeTrackingActive = false;
@@ -180,6 +196,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       eyes.ComputeCombinedEyeParameters();
       eyes.FinishUpdate();
     }
+    UniLog.Log("[VRCFTReceiver] end UpdateEyes");
   }
   public void UpdateEye(VRCFTEye source, Eye dest)
   {
@@ -190,6 +207,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   }
   private void UpdateMouth(float deltaTime)
   {
+    UniLog.Log("[VRCFTReceiver] start UpdateMouth");
     if (!IsTracking(OSCClient.LastFaceTracking) || !EnableFaceTracking)
     {
       mouth.IsTracking = false;
@@ -244,14 +262,18 @@ public class VRCFT_Driver : IInputDriver, IDisposable
       mouth.ChinRaiseBottom = OSCClient.FTData[Expressions.MouthRaiserLower];
       mouth.ChinRaiseTop = OSCClient.FTData[Expressions.MouthRaiserUpper];
     }
+    UniLog.Log("[VRCFTReceiver] end UpdateMouth");
   }
   public void Dispose()
   {
+    UniLog.Log("[VRCFTReceiver] Disposing Driver...");
     _OSCClient?.Teardown();
     _OSCQuery?.Teardown();
+    UniLog.Log("[VRCFTReceiver] Disposed Driver");
   }
   private static bool IsTracking(DateTime? timestamp)
   {
+    UniLog.Log("[VRCFTReceiver] start IsTracking");
     if (!timestamp.HasValue)
     {
       return false;
@@ -264,6 +286,7 @@ public class VRCFT_Driver : IInputDriver, IDisposable
   }
   public void AvatarChange()
   {
+    UniLog.Log("[VRCFTReceiver] start AvatarChange");
     foreach (var profile in _OSCQuery.profiles)
     {
       if (profile.name.StartsWith("VRCFT"))

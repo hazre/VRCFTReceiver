@@ -23,7 +23,7 @@ namespace VRCFTReceiver
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> TRACKING_TIMEOUT_SECONDS = new("tracking_timeout_seconds", "Seconds until tracking is considered inactive", () => 2);
         public static ModConfiguration config;
-        public static VRCFT_Driver VRCFTDriver;
+        public static Driver VRCFTDriver;
         public override string Name => "VRCFTReceiver";
         public override string Author => "hazre";
         public override string Version => "2.0.0";
@@ -42,13 +42,14 @@ namespace VRCFTReceiver
             public static void Postfix(UserRoot __instance)
             {
                 UniLog.Log($"[VRCFTReceiver] Starting UserRoot");
-                if (!__instance.ActiveUser.IsLocalUser) return;
-                if (VRCFTDriver == null)
+                if (__instance.ActiveUser.IsLocalUser && VRCFTDriver != null)
+                {
+                    VRCFTDriver.AvatarChange();
+                }
+                else
                 {
                     UniLog.Warning("[VRCFTReceiver] Driver is not initialized!");
-                    return;
                 };
-                VRCFTDriver.AvatarChange();
             }
         }
         [HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
@@ -59,7 +60,8 @@ namespace VRCFTReceiver
             {
                 try
                 {
-                    VRCFTDriver = new VRCFT_Driver();
+                    UniLog.Log("[VRCFTReceiver] Initializing VRCFT driver...");
+                    VRCFTDriver = new Driver();
                     __instance.RegisterInputDriver(VRCFTDriver);
                 }
                 catch (Exception ex)
