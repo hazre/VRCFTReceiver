@@ -12,8 +12,15 @@ namespace VRCFTReceiver
     public OSCQueryService service { get; private set; }
     public readonly List<OSCQueryServiceProfile> profiles = [];
     private CancellationTokenSource _cancellationTokenSource;
+    private Thread _oscQueryThread;
 
     public OSCQuery(int udpPort)
+    {
+      _cancellationTokenSource = new CancellationTokenSource();
+      _oscQueryThread = new Thread(() => RunOSCQuery(udpPort));
+      _oscQueryThread.Start();
+    }
+    private void RunOSCQuery(int udpPort)
     {
       var tcpPort = Extensions.GetAvailableTcpPort();
 
@@ -35,7 +42,6 @@ namespace VRCFTReceiver
 
       service.OnOscQueryServiceAdded += AddProfileToList;
 
-      _cancellationTokenSource = new CancellationTokenSource();
       StartAutoRefreshServices(5000, _cancellationTokenSource.Token);
     }
 
@@ -45,7 +51,10 @@ namespace VRCFTReceiver
       {
         return;
       }
-      profiles.Add(profile);
+      lock (profiles)
+      {
+        profiles.Add(profile);
+      }
       UniLog.Log($"[VRCFTReceiver] Added {profile.name} to list of OSCQuery profiles, at address http://{profile.address}:{profile.port}");
     }
 
@@ -59,6 +68,7 @@ namespace VRCFTReceiver
 
     private void StartAutoRefreshServices(double interval, CancellationToken cancellationToken)
     {
+      UniLog.Log("[VRCFTReceiver] OSCQuery start StartAutoRefreshServices");
       Task.Run(async () =>
       {
         while (!cancellationToken.IsCancellationRequested)
@@ -66,6 +76,7 @@ namespace VRCFTReceiver
           try
           {
             service.RefreshServices();
+            UniLog.Log("[VRCFTReceiver] OSCQuery RefreshedServices");
             await Task.Delay(TimeSpan.FromMilliseconds(interval), cancellationToken);
           }
           catch (OperationCanceledException)
@@ -84,6 +95,7 @@ namespace VRCFTReceiver
     {
       UniLog.Log("[VRCFTReceiver] OSCQuery teardown called");
       _cancellationTokenSource.Cancel();
+      _oscQueryThread.Join(); // Wait for the thread to finish
       _cancellationTokenSource.Dispose();
       service.Dispose();
       UniLog.Log("[VRCFTReceiver] OSCQuery teardown completed");
