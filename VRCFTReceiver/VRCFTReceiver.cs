@@ -9,7 +9,7 @@ namespace VRCFTReceiver
     public class VRCFTReceiver : ResoniteMod
     {
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<string> KEY_IP = new("osc_ip", "IP Address of VRCFT OSC Server", () => "127.0.0.1");
+        public static ModConfigurationKey<string> KEY_IP = new("osc_ip", "IP Address of OSC Server", () => "127.0.0.1");
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<int> KEY_RECEIVER_PORT = new("receiver_port", "Which port should the OSC data be received from?", () => 9000);
         [AutoRegisterConfigKey]
@@ -21,7 +21,7 @@ namespace VRCFTReceiver
         [AutoRegisterConfigKey]
         public static ModConfigurationKey<bool> REVERSE_EYES_X = new("reverse_eyes_x", "Reverse eye tracking x direction", () => false);
         [AutoRegisterConfigKey]
-        public static ModConfigurationKey<int> TRACKING_TIMEOUT_SECONDS = new("tracking_timeout_seconds", "Seconds until tracking is considered inactive", () => 2);
+        public static ModConfigurationKey<int> TRACKING_TIMEOUT_SECONDS = new("tracking_timeout_seconds", "Seconds until tracking is considered inactive", () => 5);
         public static ModConfiguration config;
         public static Driver VRCFTDriver;
         public override string Name => "VRCFTReceiver";
