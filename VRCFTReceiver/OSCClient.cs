@@ -26,32 +26,25 @@ namespace VRCFTReceiver
 
     public OSCClient(IPAddress ip, int? port = null)
     {
-      UniLog.Log("[VRCFTReceiver] start OSCClient");
       var listenPort = port ?? DefaultPort;
       receiver = new OscReceiver(ip, listenPort);
-      UniLog.Log("[VRCFTReceiver] created OscReceiver");
 
       foreach (var address in Expressions.AllAddresses)
       {
         FTData[address] = 0f;
       }
-      UniLog.Log("[VRCFTReceiver] assigned AllAddresses");
 
       _oscSocketState = true;
       receiver.Connect();
-      UniLog.Log("[VRCFTReceiver] connect OscReceiver");
 
-      UniLog.Log("[VRCFTReceiver] start cancellationTokenSource");
       cancellationTokenSource = new CancellationTokenSource();
-      UniLog.Log("[VRCFTReceiver] new receiveThread");
       receiveThread = new Thread(ListenLoop);
-      UniLog.Log("[VRCFTReceiver] start receiveThread");
       receiveThread.Start(cancellationTokenSource.Token);
     }
 
     private void ListenLoop(object obj)
     {
-      UniLog.Log("[VRCFTReceiver] Started OSCClient ListenLoop");
+      UniLog.Log("[VRCFTReceiver] Started OSCClient Listen Loop");
       CancellationToken cancellationToken = (CancellationToken)obj;
 
       while (!cancellationToken.IsCancellationRequested && _oscSocketState)
@@ -65,7 +58,6 @@ namespace VRCFTReceiver
           }
 
           OscPacket packet = receiver.Receive();
-          UniLog.Log($"[VRCFTReceiver] OscReceiver received packet");
           if (packet is OscBundle bundle)
           {
             foreach (var message in bundle)
@@ -73,10 +65,10 @@ namespace VRCFTReceiver
               ProcessOscMessage(message as OscMessage);
             }
           }
-          else if (packet is OscMessage message)
-          {
-            ProcessOscMessage(message);
-          }
+          // else if (packet is OscMessage message)
+          // {
+          //   ProcessOscMessage(message);
+          // }
         }
         catch (Exception ex)
         {
@@ -89,31 +81,21 @@ namespace VRCFTReceiver
 
     private void ProcessOscMessage(OscMessage message)
     {
-      UniLog.Log($"[VRCFTReceiver] start ProcessOscMessage");
       if (message == null || !FTData.ContainsKey(message.Address))
-        return;
-
-      if (message.Count > 0)
       {
-        var value = message[0];
-        if (value is float floatValue)
-        {
-          FTData[message.Address] = floatValue;
+        UniLog.Log($"[VRCFTReceiver] null message or unknown address {message.Address}");
+        return;
+      }
 
-          // Update tracking timestamps
-          if (message.Address.StartsWith(EYE_PREFIX))
-          {
-            LastEyeTracking = DateTime.UtcNow;
-          }
-          else if (message.Address.StartsWith(MOUTH_PREFIX))
-          {
-            LastFaceTracking = DateTime.UtcNow;
-          }
-        }
-        else
-        {
-          UniLog.Log($"[VRCFTReceiver] Unknown OSC type for address {message.Address}: {value.GetType()}");
-        }
+      FTData[message.Address] = (float)message[0];
+
+      if (message.Address.StartsWith(EYE_PREFIX))
+      {
+        LastEyeTracking = DateTime.UtcNow;
+      }
+      else if (message.Address.StartsWith(MOUTH_PREFIX))
+      {
+        LastFaceTracking = DateTime.UtcNow;
       }
     }
 
