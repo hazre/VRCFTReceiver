@@ -45,7 +45,7 @@ namespace Impressive
 
     private void AddProfileToList(OSCQueryServiceProfile profile)
     {
-      if (profiles.Contains(profile) || profile.port == service!.TcpPort)
+      if (profiles.Any(p => p.name == profile.name) || profile.port == service!.TcpPort)
       {
         return;
       }
