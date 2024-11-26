@@ -92,7 +92,7 @@ public class SteamLinkDriver : IInputDriver
 
     void OnNewPacket(object sender, OscPacket packet)
     {
-        // DEBUG_TRY_LOG(packet);
+        DEBUG_TRY_LOG(packet);
         if (packet is OscMessage msg)
         {
             Map(msg.Address, msg.ToArray());

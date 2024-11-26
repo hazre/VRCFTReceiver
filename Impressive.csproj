@@ -4,7 +4,7 @@
     <TargetFramework>net472</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>11</LangVersion>
+    <LangVersion>12</LangVersion>
     <Version>1.0.2</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <Authors>Cyro</Authors>
@@ -48,6 +48,7 @@
     <Reference Include="Re-Sounding">
       <HintPath>$(ResonitePath)rml_libs\Re-Sounding.dll</HintPath>
     </Reference>
+    <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
   </ItemGroup>
 
   <ItemGroup>

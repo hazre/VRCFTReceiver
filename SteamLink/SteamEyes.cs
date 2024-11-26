@@ -193,8 +193,8 @@ public struct SteamLinkEye
 
 public class ReactiveProperty<T>
 {
-    private T _value;
-    public event Action OnChanged;
+    private T _value = default!;
+    public event Action OnChanged = () => { };
 
     public T Value
     {
