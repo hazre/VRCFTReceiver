@@ -1,4 +1,4 @@
-namespace Impressive
+namespace VRCFTReceiver
 {
   public static class Expressions
   {

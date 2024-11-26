@@ -8,8 +8,8 @@
     <Version>1.0.2</Version>
     <AssemblyVersion>$(Version)</AssemblyVersion>
     <Authors>Cyro</Authors>
-    <Product>Impressive SteamLink Interface</Product>
-    <Description>SteamLink OSC face and eye tracking support for Resonite</Description>
+    <Product>VRCFT Interface</Product>
+    <Description>VRCFT OSC face and eye tracking support for Resonite</Description>
     <Copyright>Copyright (c) 2023 Riley Fields</Copyright>
   </PropertyGroup>
 
@@ -59,20 +59,6 @@
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="$(OutDir)$(TargetFileName)" DestinationFolder="$(ResonitePath)rml_mods" />
-    <Copy SourceFiles="$(OutDir)Rug.Osc.dll" DestinationFolder="$(ResonitePath)rml_libs" />
     <Copy SourceFiles="$(OutDir)Re-Sounding.dll" DestinationFolder="$(ResonitePath)rml_libs" />
-
-    <PropertyGroup>
-      <OutputDirectory>$(MSBuildProjectDirectory)\Release\ImpressiveRelease\Resonite\</OutputDirectory>
-      <OutputParent>$(OutputDirectory)..\</OutputParent>
-      <OutputRoot>$(OutputParent)..\</OutputRoot>
-    </PropertyGroup>
-
-    <Copy SourceFiles="$(OutDir)$(TargetFileName)" DestinationFolder="$(OutputDirectory)rml_mods" />
-    <Copy SourceFiles="$(OutDir)Re-Sounding.dll" DestinationFolder="$(OutputDirectory)rml_libs" />
-  </Target>
-
-  <Target Name="ZipDirectory" AfterTargets="PostBuild">
-    <Exec Command="powershell -Command &quot;Compress-Archive -Path '$(OutputParent)*' -DestinationPath '$(OutputRoot)Impressive.zip' -Force&quot;" />
   </Target>
 </Project>

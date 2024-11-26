@@ -2,12 +2,12 @@ using System.Runtime.InteropServices;
 using Elements.Core;
 using ReSounding;
 
-namespace Impressive;
-public class SteamEyes
+namespace VRCFTReceiver;
+public class VRCFTEyes
 {
-    public SteamLinkEye EyeLeft = new();
-    public SteamLinkEye EyeRight = new();
-    public SteamLinkEye EyeCombined => new()
+    public VRCFTEye EyeLeft = new();
+    public VRCFTEye EyeRight = new();
+    public VRCFTEye EyeCombined => new()
     {
         Openness = MathX.Max(EyeLeft.Openness, EyeRight.Openness),
         EyeRotation = CombinedEyesDir
@@ -23,7 +23,7 @@ public class SteamEyes
     private readonly ReactiveProperty<float> _rightBrowLowerer = new();
     private readonly ReactiveProperty<float> _rightBrowPinch = new();
 
-    public SteamEyes()
+    public VRCFTEyes()
     {
         Action leftBrowUpdate = () => UpdateBrows(
             EyeLeft,
@@ -53,7 +53,7 @@ public class SteamEyes
     }
 
     private static void UpdateBrows(
-        SteamLinkEye eye,
+        VRCFTEye eye,
         ReactiveProperty<float> browInnerUp,
         ReactiveProperty<float> browOuterUp,
         ReactiveProperty<float> browLowerer,
@@ -156,7 +156,7 @@ public class SteamEyes
     #endregion
 }
 
-public struct SteamLinkEye
+public struct VRCFTEye
 {
     public readonly bool IsTracking => IsValid && Openness > 0.1f;
 

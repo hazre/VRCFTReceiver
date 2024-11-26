@@ -4,20 +4,20 @@ using FrooxEngine;
 using System;
 using VRC.OSCQuery;
 
-namespace Impressive;
+namespace VRCFTReceiver;
 
-public partial class Impressive : ResoniteMod
+public partial class VRCFTReceiver : ResoniteMod
 {
-    public override string Name => "Impressive";
-    public override string Author => "Cyro";
-    public override string Version => typeof(Impressive).Assembly.GetName().Version.ToString();
-    public override string Link => "https://github.com/RileyGuy/Impressive";
+    public override string Name => "VRCFTReceiver";
+    public override string Author => "hazre";
+    public override string Version => typeof(VRCFTReceiver).Assembly.GetName().Version.ToString();
+    public override string Link => "https://github.com/hazre/VRCFTReceiver";
     public static ModConfiguration? Config;
     private static OSCQuery? _oscQuery;
 
     public override void OnEngineInit()
     {
-        Harmony harmony = new("net.Cyro.Impressive");
+        Harmony harmony = new("dev.hazre.VRCFTReceiver");
         Config = GetConfiguration();
         Config?.Save(true);
         harmony.PatchAll();
@@ -27,7 +27,7 @@ public partial class Impressive : ResoniteMod
         {
             try
             {
-                engine.InputInterface.RegisterInputDriver(new SteamLinkDriver());
+                engine.InputInterface.RegisterInputDriver(new VRCFTDriver());
                 InitializeOSCQuery();
             }
             catch (Exception ex)

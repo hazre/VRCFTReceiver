@@ -4,43 +4,43 @@ using Rug.Osc;
 using ReSounding;
 using System.Data.Common;
 
-namespace Impressive;
+namespace VRCFTReceiver;
 
-public class SteamLinkDriver : IInputDriver
+public class VRCFTDriver : IInputDriver
 {
     private InputInterface? input;
     private Eyes? eyes;
     private Mouth? mouth;
 
     private readonly OSCBridge bridge = new();
-    private readonly SteamEyes eyeData = new();
-    private readonly SteamFace faceData = new();
+    private readonly VRCFTEyes eyeData = new();
+    private readonly VRCFTFace faceData = new();
 
     private readonly object _lock = new();
-    public int UpdateOrder => 150; // Realistically, I have no idea what this is supposed to do. :(
+    public int UpdateOrder => 150;
 
     public DateTime DEBUG_TIME = DateTime.Now;
 
 
     public void CollectDeviceInfos(DataTreeList list)
     {
-        Impressive.Msg("Collecting SteamLink device info");
+        VRCFTReceiver.Msg("Collecting VRCFT device info");
 
         // Eye tracking
         DataTreeDictionary eyeDict = new();
 
-        eyeDict.Add("Name", "SteamLink Eye Datastream");
+        eyeDict.Add("Name", "VRCFT Eye Datastream");
         eyeDict.Add("Type", "Eye Tracking");
-        eyeDict.Add("Model", "SteamLink");
+        eyeDict.Add("Model", "VRCFT");
         list.Add(eyeDict);
 
 
         // Mouth tracking
         DataTreeDictionary mouthDict = new();
 
-        mouthDict.Add("Name", "SteamLink Face Datastream");
+        mouthDict.Add("Name", "VRCFT Face Datastream");
         mouthDict.Add("Type", "Lip Tracking");
-        mouthDict.Add("Model", "SteamLink");
+        mouthDict.Add("Model", "VRCFT");
         list.Add(mouthDict);
     }
 
@@ -48,17 +48,17 @@ public class SteamLinkDriver : IInputDriver
     public void RegisterInputs(InputInterface i)
     {
         input = i;
-        Impressive.Msg("Attempting to start OSC listener");
+        VRCFTReceiver.Msg("Attempting to start OSC listener");
         try
         {
             if (bridge.TryStartListen())
             {
                 OSCMapper.RegisterConverters(typeof(OSCTypeConverters)); // Register custom type converter(s)
-                Impressive.Msg("Starting SteamLink datastream!");
+                VRCFTReceiver.Msg("Starting VRCFT datastream!");
 
                 // Register eye and mouth tracking devices
-                eyes = new(input, "Steam Link Datastream", false);
-                mouth = new(input, "Steam Link Datastream", [
+                eyes = new(input, "VRCFTReceiver Datastream", false);
+                mouth = new(input, "VRCFTReceiver Datastream", [
                     MouthParameterGroup.JawPose,
                     MouthParameterGroup.JawOpen,
                     MouthParameterGroup.TonguePose,
@@ -79,13 +79,13 @@ public class SteamLinkDriver : IInputDriver
 
                 // Subscribe events for receiving packets, changing config options, and shutting down
                 bridge.ReceivedPacket += OnNewPacket;
-                Impressive.Port_Config.OnChanged += OnSettingChanged;
+                VRCFTReceiver.Port_Config.OnChanged += OnSettingChanged;
                 i.Engine.OnShutdown += Shutdown;
             }
         }
         catch (Exception ex)
         {
-            Impressive.Msg($"Failed to initialize OSC server! Exception: {ex}");
+            VRCFTReceiver.Msg($"Failed to initialize OSC server! Exception: {ex}");
         }
     }
 
@@ -118,20 +118,20 @@ public class SteamLinkDriver : IInputDriver
         DEBUG_TIME = DateTime.Now;
         if (pckt is OscMessage msg)
         {
-            Impressive.Msg("---- DEBUG MESSAGE ----");
-            Impressive.Msg(msg);
-            Impressive.Msg("---- END MSG ----");
-            Impressive.Msg("");
+            VRCFTReceiver.Msg("---- DEBUG MESSAGE ----");
+            VRCFTReceiver.Msg(msg);
+            VRCFTReceiver.Msg("---- END MSG ----");
+            VRCFTReceiver.Msg("");
         }
         else if (pckt is OscBundle bnd)
         {
-            Impressive.Msg("---- DEBUG BUNDLE ----");
+            VRCFTReceiver.Msg("---- DEBUG BUNDLE ----");
             foreach (var pkt in bnd)
             {
-                Impressive.Msg(pkt);
+                VRCFTReceiver.Msg(pkt);
             }
-            Impressive.Msg("---- END BUNDLE ----");
-            Impressive.Msg("");
+            VRCFTReceiver.Msg("---- END BUNDLE ----");
+            VRCFTReceiver.Msg("");
         }
     }
 
@@ -147,7 +147,7 @@ public class SteamLinkDriver : IInputDriver
             }
             catch (Exception ex)
             {
-                Impressive.Msg($"Invalid mapping to address \"{addr}\"! Exception: {ex}");
+                VRCFTReceiver.Msg($"Invalid mapping to address \"{addr}\"! Exception: {ex}");
             }
         }
     }
@@ -157,7 +157,7 @@ public class SteamLinkDriver : IInputDriver
     {
         if (eyes != null && mouth != null && input != null)
         {
-            bool enabled = Impressive.Enabled;
+            bool enabled = VRCFTReceiver.Enabled;
             eyes.IsDeviceActive = enabled;
             eyes.IsEyeTrackingActive = enabled;
             mouth.IsDeviceActive = enabled;
@@ -185,7 +185,7 @@ public class SteamLinkDriver : IInputDriver
     }
 
 
-    public void UpdateEye(SteamLinkEye source, Eye dest)
+    public void UpdateEye(VRCFTEye source, Eye dest)
     {
         if (source.IsValid)
         {

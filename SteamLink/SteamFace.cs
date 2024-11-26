@@ -1,9 +1,9 @@
 using Elements.Core;
 using ReSounding;
 
-namespace Impressive;
+namespace VRCFTReceiver;
 
-public class SteamFace
+public class VRCFTFace
 {
     public float MouthLeftSmileFrown => MouthSmileLeft - MouthFrownLeft;
     public float MouthRightSmileFrown => MouthSmileRight - MouthFrownRight;

@@ -2,7 +2,7 @@ using System.Net;
 using Rug.Osc;
 using VRC.OSCQuery;
 
-namespace Impressive
+namespace VRCFTReceiver
 {
   public class OSCQuery
   {
@@ -32,7 +32,7 @@ namespace Impressive
         .AdvertiseOSC()
         .Build();
 
-      Impressive.Msg($"Started OSCQueryService {service.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{service.HostIP}:{tcpPort}");
+      VRCFTReceiver.Msg($"Started OSCQueryService {service.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{service.HostIP}:{tcpPort}");
 
       service.AddEndpoint<string>("/avatar/change", Attributes.AccessValues.ReadWrite, ["default"]);
 
@@ -53,7 +53,7 @@ namespace Impressive
       {
         profiles.Add(profile);
       }
-      Impressive.Msg($"Added {profile.name} to list of OSCQuery profiles, at address http://{profile.address}:{profile.port}");
+      VRCFTReceiver.Msg($"Added {profile.name} to list of OSCQuery profiles, at address http://{profile.address}:{profile.port}");
     }
 
     private void AddParametersToEndpoint()
@@ -66,7 +66,7 @@ namespace Impressive
 
     private void StartAutoRefreshServices(double interval, CancellationToken cancellationToken)
     {
-      Impressive.Msg("OSCQuery start StartAutoRefreshServices");
+      VRCFTReceiver.Msg("OSCQuery start StartAutoRefreshServices");
       Task.Run(async () =>
       {
         while (!cancellationToken.IsCancellationRequested)
@@ -74,7 +74,7 @@ namespace Impressive
           try
           {
             service!.RefreshServices();
-            Impressive.Msg("OSCQuery RefreshedServices");
+            VRCFTReceiver.Msg("OSCQuery RefreshedServices");
             await Task.Delay(TimeSpan.FromMilliseconds(interval), cancellationToken);
           }
           catch (OperationCanceledException)
@@ -83,7 +83,7 @@ namespace Impressive
           }
           catch (Exception ex)
           {
-            Impressive.Msg($"Error in AutoRefreshServices: {ex.Message}");
+            VRCFTReceiver.Msg($"Error in AutoRefreshServices: {ex.Message}");
           }
         }
       }, cancellationToken);
@@ -91,12 +91,12 @@ namespace Impressive
 
     public void Teardown()
     {
-      Impressive.Msg("OSCQuery teardown called");
+      VRCFTReceiver.Msg("OSCQuery teardown called");
       _cancellationTokenSource.Cancel();
       _oscQueryThread.Join(); // Wait for the thread to finish
       _cancellationTokenSource.Dispose();
       service!.Dispose();
-      Impressive.Msg("OSCQuery teardown completed");
+      VRCFTReceiver.Msg("OSCQuery teardown completed");
     }
 
     // Utility methods to replace VRCFTReceiver's Utils methods
@@ -126,11 +126,11 @@ namespace Impressive
           sender.Connect();
           sender.Send(new OscMessage(address, value));
         }
-        Impressive.Msg($"Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
+        VRCFTReceiver.Msg($"Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
       }
       catch (Exception ex)
       {
-        Impressive.Msg($"Error sending OSC message: {ex.Message}");
+        VRCFTReceiver.Msg($"Error sending OSC message: {ex.Message}");
       }
     }
   }

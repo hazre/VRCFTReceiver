@@ -1,6 +1,6 @@
 using Elements.Core;
 
-namespace Impressive;
+namespace VRCFTReceiver;
 public static class OSCTypeConverters
 {
     public static float3 Convert(object[] data)
