@@ -58,7 +58,7 @@ public class SteamLinkDriver : IInputDriver
 
                 // Register eye and mouth tracking devices
                 eyes = new(input, "Steam Link Datastream", false);
-                mouth = new(input, "Steam Link Datastream", new MouthParameterGroup[] {
+                mouth = new(input, "Steam Link Datastream", [
                     MouthParameterGroup.JawPose,
                     MouthParameterGroup.JawOpen,
                     MouthParameterGroup.TonguePose,
@@ -75,7 +75,7 @@ public class SteamLinkDriver : IInputDriver
                     MouthParameterGroup.CheekRaise,
                     MouthParameterGroup.ChinRaise,
                     MouthParameterGroup.NoseWrinkle
-                });
+                ]);
 
                 // Subscribe events for receiving packets, changing config options, and shutting down
                 bridge.ReceivedPacket += OnNewPacket;
@@ -157,7 +157,7 @@ public class SteamLinkDriver : IInputDriver
     {
         if (eyes != null && mouth != null && input != null)
         {
-            bool enabled = Impressive.Enabled && input.VR_Active;
+            bool enabled = Impressive.Enabled;
             eyes.IsDeviceActive = enabled;
             eyes.IsEyeTrackingActive = enabled;
             mouth.IsDeviceActive = enabled;
