@@ -171,12 +171,6 @@ public class SteamLinkDriver : IInputDriver
                     UpdateEye(eyeData.EyeRight, eyes.RightEye);
                     UpdateEye(eyeData.EyeCombined, eyes.CombinedEye);
 
-                    eyes.LeftEye.InnerBrowVertical = eyeData.LeftInnerBrowVertical;
-                    eyes.LeftEye.OuterBrowVertical = eyeData.LeftOuterBrowVertical;
-
-                    eyes.RightEye.InnerBrowVertical = eyeData.RightInnerBrowVertical;
-                    eyes.RightEye.OuterBrowVertical = eyeData.RightOuterBrowVertical;
-
                     eyes.ComputeCombinedEyeParameters();
                     eyes.FinishUpdate();
 
@@ -202,6 +196,8 @@ public class SteamLinkDriver : IInputDriver
             dest.PupilDiameter = 0.004f;
             dest.Squeeze = 0f;
             dest.IsTracking = true;
+            dest.InnerBrowVertical = source.InnerBrowVertical;
+            dest.OuterBrowVertical = source.OuterBrowVertical;
         }
         else
         {
@@ -210,6 +206,8 @@ public class SteamLinkDriver : IInputDriver
             dest.Squeeze = 0f;
             dest.Direction = float3.Forward;
             dest.IsTracking = false;
+            dest.InnerBrowVertical = 0f;
+            dest.OuterBrowVertical = 0f;
         }
     }
 

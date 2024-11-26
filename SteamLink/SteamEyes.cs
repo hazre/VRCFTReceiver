@@ -13,6 +13,57 @@ public class SteamEyes
         EyeRotation = CombinedEyesDir
     };
 
+    private readonly ReactiveProperty<float> _leftBrowInnerUp = new();
+    private readonly ReactiveProperty<float> _leftBrowOuterUp = new();
+    private readonly ReactiveProperty<float> _leftBrowLowerer = new();
+    private readonly ReactiveProperty<float> _leftBrowPinch = new();
+
+    private readonly ReactiveProperty<float> _rightBrowInnerUp = new();
+    private readonly ReactiveProperty<float> _rightBrowOuterUp = new();
+    private readonly ReactiveProperty<float> _rightBrowLowerer = new();
+    private readonly ReactiveProperty<float> _rightBrowPinch = new();
+
+    public SteamEyes()
+    {
+        Action leftBrowUpdate = () => UpdateBrows(
+            EyeLeft,
+            _leftBrowInnerUp,
+            _leftBrowOuterUp,
+            _leftBrowLowerer,
+            _leftBrowPinch
+        );
+
+        Action rightBrowUpdate = () => UpdateBrows(
+            EyeRight,
+            _rightBrowInnerUp,
+            _rightBrowOuterUp,
+            _rightBrowLowerer,
+            _rightBrowPinch
+        );
+
+        _leftBrowInnerUp.OnChanged += leftBrowUpdate;
+        _leftBrowOuterUp.OnChanged += leftBrowUpdate;
+        _leftBrowLowerer.OnChanged += leftBrowUpdate;
+        _leftBrowPinch.OnChanged += leftBrowUpdate;
+
+        _rightBrowInnerUp.OnChanged += rightBrowUpdate;
+        _rightBrowOuterUp.OnChanged += rightBrowUpdate;
+        _rightBrowLowerer.OnChanged += rightBrowUpdate;
+        _rightBrowPinch.OnChanged += rightBrowUpdate;
+    }
+
+    private static void UpdateBrows(
+        SteamLinkEye eye,
+        ReactiveProperty<float> browInnerUp,
+        ReactiveProperty<float> browOuterUp,
+        ReactiveProperty<float> browLowerer,
+        ReactiveProperty<float> browPinch)
+    {
+        float browLowererValue = browPinch - browLowerer;
+        eye.InnerBrowVertical = browInnerUp - browLowererValue;
+        eye.OuterBrowVertical = browOuterUp - browLowererValue;
+    }
+
     public floatQ CombinedEyesDir
     {
         get
@@ -74,38 +125,35 @@ public class SteamEyes
 
     #endregion
 
-    public float LeftBrowLowerer => BrowPinchLeft - BrowLowererLeft;
-    public float RightBrowLowerer => BrowPinchRight - BrowLowererRight;
+    #region Brows
 
-    public float LeftInnerBrowVertical => BrowInnerUpLeft - LeftBrowLowerer;
-    public float LeftOuterBrowVertical => BrowOuterUpLeft - LeftBrowLowerer;
-
-    public float RightInnerBrowVertical => BrowInnerUpRight - RightBrowLowerer;
-    public float RightOuterBrowVertical => BrowOuterUpRight - RightBrowLowerer;
-
+    // Left brow OSC mappings
     [OSCMap("/avatar/parameters/v2/BrowInnerUpLeft")]
-    public float BrowInnerUpLeft;
-
-    [OSCMap("/avatar/parameters/v2/BrowInnerUpRight")]
-    public float BrowInnerUpRight;
-
-    [OSCMap("/avatar/parameters/v2/BrowLowererLeft")]
-    public float BrowLowererLeft;
-
-    [OSCMap("/avatar/parameters/v2/BrowLowererRight")]
-    public float BrowLowererRight;
+    public float BrowInnerUpLeft { set => _leftBrowInnerUp.Value = value; }
 
     [OSCMap("/avatar/parameters/v2/BrowOuterUpLeft")]
-    public float BrowOuterUpLeft;
+    public float BrowOuterUpLeft { set => _leftBrowOuterUp.Value = value; }
 
-    [OSCMap("/avatar/parameters/v2/BrowOuterUpRight")]
-    public float BrowOuterUpRight;
+    [OSCMap("/avatar/parameters/v2/BrowLowererLeft")]
+    public float BrowLowererLeft { set => _leftBrowLowerer.Value = value; }
 
     [OSCMap("/avatar/parameters/v2/BrowPinchLeft")]
-    public float BrowPinchLeft;
+    public float BrowPinchLeft { set => _leftBrowPinch.Value = value; }
+
+    // Right brow OSC mappings
+    [OSCMap("/avatar/parameters/v2/BrowInnerUpRight")]
+    public float BrowInnerUpRight { set => _rightBrowInnerUp.Value = value; }
+
+    [OSCMap("/avatar/parameters/v2/BrowOuterUpRight")]
+    public float BrowOuterUpRight { set => _rightBrowOuterUp.Value = value; }
+
+    [OSCMap("/avatar/parameters/v2/BrowLowererRight")]
+    public float BrowLowererRight { set => _rightBrowLowerer.Value = value; }
 
     [OSCMap("/avatar/parameters/v2/BrowPinchRight")]
-    public float BrowPinchRight;
+    public float BrowPinchRight { set => _rightBrowPinch.Value = value; }
+
+    #endregion
 }
 
 public struct SteamLinkEye
@@ -126,6 +174,8 @@ public struct SteamLinkEye
     public float Openness;
     public float Widen;
     public float Squeeze;
+    public float InnerBrowVertical;
+    public float OuterBrowVertical;
 
     public void SetDirectionFromXY(float? X = null, float? Y = null)
     {
@@ -139,4 +189,25 @@ public struct SteamLinkEye
         // Convert to cartesian coordinates
         EyeRotation = floatQ.Euler(yAng * MathX.Rad2Deg, xAng * MathX.Rad2Deg, 0f);
     }
+}
+
+public class ReactiveProperty<T>
+{
+    private T _value;
+    public event Action OnChanged;
+
+    public T Value
+    {
+        get => _value;
+        set
+        {
+            if (!EqualityComparer<T>.Default.Equals(_value, value))
+            {
+                _value = value;
+                OnChanged?.Invoke();
+            }
+        }
+    }
+
+    public static implicit operator T(ReactiveProperty<T> property) => property.Value;
 }
