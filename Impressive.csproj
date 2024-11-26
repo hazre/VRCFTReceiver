@@ -70,8 +70,6 @@
 
     <Copy SourceFiles="$(OutDir)$(TargetFileName)" DestinationFolder="$(OutputDirectory)rml_mods" />
     <Copy SourceFiles="$(OutDir)Re-Sounding.dll" DestinationFolder="$(OutputDirectory)rml_libs" />
-    <Copy SourceFiles="$(OutDir)Rug.Osc.dll" DestinationFolder="$(OutputDirectory)rml_libs" />
-
   </Target>
 
   <Target Name="ZipDirectory" AfterTargets="PostBuild">
