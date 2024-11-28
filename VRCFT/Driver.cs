@@ -1,7 +1,6 @@
 using Elements.Core;
 using FrooxEngine;
 using Rug.Osc;
-using ReSounding;
 using System.Data.Common;
 
 namespace VRCFTReceiver;

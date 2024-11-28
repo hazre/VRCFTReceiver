@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using Elements.Core;
-using ReSounding;
 
 namespace VRCFTReceiver;
 public class VRCFTEyes
