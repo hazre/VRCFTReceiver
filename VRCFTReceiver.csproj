@@ -48,9 +48,6 @@
     <Reference Include="Rug.Osc">
       <HintPath>$(ResonitePath)Resonite_Data\Managed\Rug.Osc.dll</HintPath>
     </Reference>
-    <Reference Include="Re-Sounding">
-      <HintPath>$(ResonitePath)rml_libs\Re-Sounding.dll</HintPath>
-    </Reference>
     <PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
   </ItemGroup>
 
@@ -61,6 +58,14 @@
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Copy SourceFiles="$(OutDir)$(TargetFileName)" DestinationFolder="$(ResonitePath)rml_mods" />
-    <Copy SourceFiles="$(OutDir)Re-Sounding.dll" DestinationFolder="$(ResonitePath)rml_libs" />
+    <Copy SourceFiles="$(OutDir)vrc-oscquery-lib.dll" DestinationFolder="$(ResonitePath)rml_libs" />
+    <Copy SourceFiles="$(OutDir)MeaMod.DNS.dll" DestinationFolder="$(ResonitePath)rml_libs" />
   </Target>
+
+  <ItemGroup>
+    <Reference Update="@(Reference)">
+      <Private>false</Private>
+      <PrivateAssets>all</PrivateAssets>
+    </Reference>
+  </ItemGroup>
 </Project>
