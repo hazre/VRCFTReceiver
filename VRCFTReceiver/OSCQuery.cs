@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection;
 using Rug.Osc;
 using VRC.OSCQuery;
 
@@ -56,9 +57,34 @@ namespace VRCFTReceiver
       VRCFTReceiver.Msg($"Added {profile.name} to list of OSCQuery profiles, at address http://{profile.address}:{profile.port}");
     }
 
+    private IEnumerable<string> GetAllOSCParameters()
+    {
+      var assembly = Assembly.GetExecutingAssembly();
+      var types = assembly.GetTypes();
+
+      var parameters = new HashSet<string>();
+      foreach (var type in types)
+      {
+        // Get both fields and properties
+        var members = type.GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(m => m.MemberType == MemberTypes.Field || m.MemberType == MemberTypes.Property);
+
+        foreach (var member in members)
+        {
+          var attr = member.GetCustomAttribute<OSCMapAttribute>();
+          if (attr != null)
+          {
+            parameters.UnionWith(attr.Paths);
+          }
+        }
+      }
+
+      return parameters;
+    }
+
     private void AddParametersToEndpoint()
     {
-      foreach (var parameter in Expressions.AllAddresses)
+      foreach (var parameter in GetAllOSCParameters())
       {
         service!.AddEndpoint<float>(parameter, Attributes.AccessValues.ReadWrite, [0f]);
       }
