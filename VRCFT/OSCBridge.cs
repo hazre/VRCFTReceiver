@@ -6,7 +6,8 @@ namespace VRCFTReceiver;
 public class OSCBridge
 {
     public bool Listening { get; private set; }
-    public int Port => VRCFTReceiver.Config!.GetValue(VRCFTReceiver.Port_Config);
+    public int Port => VRCFTReceiver.Port;
+    public string IP => VRCFTReceiver.IP;
     public EventHandler<OscPacket>? ReceivedPacket;
     private Thread? listenThread;
     private CancellationTokenSource tkSrc = new();
@@ -22,7 +23,8 @@ public class OSCBridge
         try
         {
             VRCFTReceiver.Msg("Creating receiver");
-            OscReceiver recv = new(IPAddress.Any, Port);
+            IPAddress address = IPAddress.Parse(IP);
+            OscReceiver recv = new(address, Port);
             VRCFTReceiver.Msg("Creating thread loop");
             listenThread = new(new ThreadStart(() => ListenLoop(recv, tkSrc.Token)));
             VRCFTReceiver.Msg("Connecting receiver");

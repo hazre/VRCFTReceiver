@@ -78,6 +78,7 @@ public class VRCFTDriver : IInputDriver
 
                 // Subscribe events for receiving packets, changing config options, and shutting down
                 bridge.ReceivedPacket += OnNewPacket;
+                VRCFTReceiver.IP_Config.OnChanged += OnSettingChanged;
                 VRCFTReceiver.Port_Config.OnChanged += OnSettingChanged;
                 i.Engine.OnShutdown += Shutdown;
             }
@@ -156,29 +157,29 @@ public class VRCFTDriver : IInputDriver
     {
         if (eyes != null && mouth != null && input != null)
         {
-            bool enabled = VRCFTReceiver.Enabled;
-            eyes.IsDeviceActive = enabled;
-            eyes.IsEyeTrackingActive = enabled;
-            mouth.IsDeviceActive = enabled;
-            mouth.IsTracking = enabled;
+            bool eyeTrackingEnabled = VRCFTReceiver.EnableEyeTracking;
+            bool faceTrackingEnabled = VRCFTReceiver.EnableFaceTracking;
 
-            if (enabled)
+            eyes.IsDeviceActive = eyeTrackingEnabled;
+            eyes.IsEyeTrackingActive = eyeTrackingEnabled;
+            mouth.IsDeviceActive = faceTrackingEnabled;
+            mouth.IsTracking = faceTrackingEnabled;
+
+            lock (_lock)
             {
-                lock (_lock)
+                if (eyeTrackingEnabled)
                 {
                     UpdateEye(eyeData.EyeLeft, eyes.LeftEye);
                     UpdateEye(eyeData.EyeRight, eyes.RightEye);
                     UpdateEye(eyeData.EyeCombined, eyes.CombinedEye);
-
                     eyes.ComputeCombinedEyeParameters();
                     eyes.FinishUpdate();
+                }
 
+                if (faceTrackingEnabled)
+                {
                     UpdateFace(mouth);
                 }
-            }
-            else
-            {
-
             }
         }
     }

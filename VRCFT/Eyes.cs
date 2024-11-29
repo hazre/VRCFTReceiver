@@ -181,9 +181,13 @@ public struct VRCFTEye
         DirX = X ?? DirX;
         DirY = Y ?? DirY;
 
+        // Apply reversal based on configuration
+        float finalX = VRCFTReceiver.ReverseEyesX ? -DirX : DirX;
+        float finalY = VRCFTReceiver.ReverseEyesY ? -DirY : DirY;
+
         // Get the angles out of the eye look
-        float xAng = MathX.Asin(DirX);
-        float yAng = MathX.Asin(DirY);
+        float xAng = MathX.Asin(finalX);
+        float yAng = MathX.Asin(finalY);
 
         // Convert to cartesian coordinates
         EyeRotation = floatQ.Euler(yAng * MathX.Rad2Deg, xAng * MathX.Rad2Deg, 0f);
