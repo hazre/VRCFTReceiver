@@ -58,8 +58,8 @@ public partial class VRCFTReceiver : ResoniteMod
     {
         try
         {
-            // Use a default UDP port, you can make this configurable later
-            _oscQuery = new OSCQuery(9001);
+            var tcpPort = Extensions.GetAvailableTcpPort();
+            _oscQuery = new OSCQuery(tcpPort);
             Msg("OSCQuery initialized successfully!");
         }
         catch (Exception ex)
