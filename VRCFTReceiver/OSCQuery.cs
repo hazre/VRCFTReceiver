@@ -12,17 +12,15 @@ namespace VRCFTReceiver
     private CancellationTokenSource _cancellationTokenSource;
     private Thread _oscQueryThread;
 
-    public OSCQuery(int udpPort)
+    public OSCQuery(int udpPort, int tcpPort)
     {
       _cancellationTokenSource = new CancellationTokenSource();
-      _oscQueryThread = new Thread(() => RunOSCQuery(udpPort));
+      _oscQueryThread = new Thread(() => RunOSCQuery(udpPort, tcpPort));
       _oscQueryThread.Start();
     }
 
-    private void RunOSCQuery(int udpPort)
+    private void RunOSCQuery(int udpPort, int tcpPort)
     {
-      var tcpPort = GetAvailableTcpPort();
-
       service = new OSCQueryServiceBuilder()
         .WithDiscovery(new MeaModDiscovery())
         .WithTcpPort(tcpPort)
@@ -123,16 +121,6 @@ namespace VRCFTReceiver
       _cancellationTokenSource.Dispose();
       service!.Dispose();
       VRCFTReceiver.Msg("OSCQuery teardown completed");
-    }
-
-    // Utility methods to replace VRCFTReceiver's Utils methods
-    private static int GetAvailableTcpPort()
-    {
-      var listener = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
-      listener.Start();
-      int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
-      listener.Stop();
-      return port;
     }
 
     private static string RandomString(int length = 8)

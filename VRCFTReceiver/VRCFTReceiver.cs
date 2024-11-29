@@ -59,7 +59,9 @@ public partial class VRCFTReceiver : ResoniteMod
         try
         {
             var tcpPort = Extensions.GetAvailableTcpPort();
-            _oscQuery = new OSCQuery(tcpPort);
+            // since we only receive osc, I think this can be whatever.
+            var udpPort = Extensions.GetAvailableUdpPort();
+            _oscQuery = new OSCQuery(udpPort, tcpPort);
             Msg("OSCQuery initialized successfully!");
         }
         catch (Exception ex)
