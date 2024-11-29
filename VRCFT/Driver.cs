@@ -193,7 +193,7 @@ public class VRCFTDriver : IInputDriver
             dest.Widen = source.Widen;
             dest.Openness = source.Openness;
             dest.PupilDiameter = 0.004f;
-            dest.Squeeze = 0f;
+            dest.Squeeze = source.Squeeze;
             dest.IsTracking = true;
             dest.InnerBrowVertical = source.InnerBrowVertical;
             dest.OuterBrowVertical = source.OuterBrowVertical;
