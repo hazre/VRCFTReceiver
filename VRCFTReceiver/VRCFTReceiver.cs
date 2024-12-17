@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using ResoniteModLoader;
 using FrooxEngine;
-using System;
 using VRC.OSCQuery;
 
 namespace VRCFTReceiver;

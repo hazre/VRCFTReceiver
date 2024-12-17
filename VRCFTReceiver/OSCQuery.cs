@@ -32,13 +32,9 @@ namespace VRCFTReceiver
         .Build();
 
       VRCFTReceiver.Msg($"Started OSCQueryService {service.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{service.HostIP}:{tcpPort}");
-
       service.AddEndpoint<string>("/avatar/change", Attributes.AccessValues.ReadWrite, ["default"]);
-
       AddParametersToEndpoint();
-
       service.OnOscQueryServiceAdded += AddProfileToList;
-
       StartAutoRefreshServices(5000, _cancellationTokenSource.Token);
     }
 

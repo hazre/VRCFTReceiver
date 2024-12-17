@@ -1,4 +1,3 @@
-using System.Reflection;
 using ResoniteModLoader;
 
 namespace VRCFTReceiver;
