@@ -102,7 +102,7 @@ public class VRCFTEyes
 
     // Right eyes
     [OSCMap("/avatar/parameters/v2/EyeOpenRight")]
-    public float EyeOpenRight { set => EyeRight.Openness = 1f - MathX.Sqrt(value); }
+    public float EyeOpenRight { set => EyeRight.Openness = value; }
 
     [OSCMap("/avatar/parameters/v2/EyeWideRight")]
     public float EyeWideRight { set => EyeRight.Widen = value; }
@@ -113,7 +113,7 @@ public class VRCFTEyes
 
     // Left eyes
     [OSCMap("/avatar/parameters/v2/EyeOpenLeft")]
-    public float EyeOpenLeft { set => EyeLeft.Openness = 1f - MathX.Sqrt(value); }
+    public float EyeOpenLeft { set => EyeLeft.Openness = value; }
 
     [OSCMap("/avatar/parameters/v2/EyeWideLeft")]
     public float EyeWideLeft { set => EyeLeft.Widen = value; }
