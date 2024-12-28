@@ -52,12 +52,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Collections.Immutable" Version="8.0.0" />
-    <PackageReference Include="System.Memory" Version="4.5.5" />
+    <PackageReference Include="System.Collections.Immutable" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="System.Memory" Version="4.6.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Copy SourceFiles="$(OutDir)$(TargetFileName)" DestinationFolder="$(ResonitePath)rml_mods" />
+    <Copy SourceFiles="$(OutDir)$(TargetFileName);$(OutDir)$(TargetName).pdb" DestinationFolder="$(ResonitePath)rml_mods" />
     <Copy SourceFiles="$(OutDir)vrc-oscquery-lib.dll" DestinationFolder="$(ResonitePath)rml_libs" />
     <Copy SourceFiles="$(OutDir)MeaMod.DNS.dll" DestinationFolder="$(ResonitePath)rml_libs" />
   </Target>
