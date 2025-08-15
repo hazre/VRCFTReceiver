@@ -7,176 +7,124 @@ using Rug.Osc;
 
 namespace VRCFTReceiver
 {
-  public class OSCClient
-  {
-    private bool _oscSocketState;
-    private static readonly float[] _ftData = new float[(int)ExpressionIndex.Count];
-    private static readonly object _dataLock = new object();
-    public static float GetData(ExpressionIndex index)
-    {
-      lock (_dataLock)
-      {
-        return _ftData[(int)index];
-      }
-    }
+	public class OSCClient
+	{
+		private bool _oscSocketState;
+		public static readonly Dictionary<string, float> FTData = new Dictionary<string, float> { };
 
-    public OscReceiver receiver { get; private set; }
-    private Thread receiveThread;
-    private CancellationTokenSource cancellationTokenSource;
-    private readonly AutoResetEvent resetEvent = new AutoResetEvent(false);
+		public OscReceiver receiver { get; private set; }
+		private Thread receiveThread;
+		private CancellationTokenSource cancellationTokenSource;
+		private const int DefaultPort = 9000;
 
-    private const int DefaultPort = 9000;
+		public static DateTime? LastEyeTracking { get; private set; }
+		public static DateTime? LastFaceTracking { get; private set; }
 
-    public static DateTime? LastEyeTracking { get; private set; }
-    public static DateTime? LastFaceTracking { get; private set; }
+		private const string EYE_PREFIX = "/avatar/parameters/v2/Eye";
+		private const string MOUTH_PREFIX = "/avatar/parameters/v2/Mouth";
 
-    private const string EYE_PREFIX = "/avatar/parameters/v2/Eye";
-    private const string MOUTH_PREFIX = "/avatar/parameters/v2/Mouth";
-    private const int RECONNECT_ATTEMPT_DELAY_MS = 5000;
-    private DateTime _lastReconnectAttempt;
-    private static IPAddress _ip;
-    private static int _port;
+		public OSCClient(IPAddress ip, int? port = null)
+		{
+			var listenPort = port ?? DefaultPort;
+			receiver = new OscReceiver(ip, listenPort);
 
-    public OSCClient(IPAddress ip, int? port = null)
-    {
-      _ip = ip;
-      _port = port ?? DefaultPort;
+			foreach (var address in Expressions.AllAddresses)
+			{
+				FTData[address] = 0f;
+			}
 
-      receiver = new OscReceiver(_ip, _port);
+			_oscSocketState = true;
+			receiver.Connect();
 
-      for (int i = 0; i < (int)ExpressionIndex.Count; i++)
-      {
-        _ftData[i] = 0f;
-      }
+			cancellationTokenSource = new CancellationTokenSource();
+			receiveThread = new Thread(ListenLoop);
+			receiveThread.Start(cancellationTokenSource.Token);
+		}
 
-      _oscSocketState = true;
-      receiver.Connect();
+		private void ListenLoop(object obj)
+		{
+			UniLog.Log("[VRCFTReceiver] Started OSCClient Listen Loop");
+			CancellationToken cancellationToken = (CancellationToken)obj;
 
-      cancellationTokenSource = new CancellationTokenSource();
-      receiveThread = new Thread(ListenLoop);
-      receiveThread.Start(cancellationTokenSource.Token);
-    }
+			while (!cancellationToken.IsCancellationRequested && _oscSocketState)
+			{
+				try
+				{
+					if (receiver.State != OscSocketState.Connected)
+					{
+						UniLog.Log($"[VRCFTReceiver] OscReceiver state {receiver.State}, breaking..");
+						break;
+					}
 
-    private void ListenLoop(object obj)
-    {
-      UniLog.Log("[VRCFTReceiver] Started OSCClient Listen Loop");
-      CancellationToken cancellationToken = (CancellationToken)obj;
+					OscPacket packet = receiver.Receive();
+					if (packet is OscBundle bundle)
+					{
+						foreach (var message in bundle)
+						{
+							ProcessOscMessage(message as OscMessage);
+						}
+					}
+					// else if (packet is OscMessage message)
+					// {
+					//   ProcessOscMessage(message);
+					// }
+				}
+				catch (Exception ex)
+				{
+					UniLog.Log($"[VRCFTReceiver] Error in OSCClient ListenLoop: {ex.Message}");
+				}
+			}
 
-      while (!cancellationToken.IsCancellationRequested && _oscSocketState)
-      {
-        try
-        {
-          if (receiver.State != OscSocketState.Connected)
-          {
-            if (DateTime.UtcNow - _lastReconnectAttempt > TimeSpan.FromMilliseconds(RECONNECT_ATTEMPT_DELAY_MS))
-            {
-              AttemptReconnect();
-            }
-            continue;
-          }
+			UniLog.Log("[VRCFTReceiver] OSCClient ListenLoop ended");
+		}
 
-          resetEvent.WaitOne(1);
-          var packet = receiver.Receive();
+		private void ProcessOscMessage(OscMessage message)
+		{
+			if (message == null || !FTData.ContainsKey(message.Address))
+			{
+				UniLog.Log($"[VRCFTReceiver] null message or unknown address {message.Address}");
+				return;
+			}
 
-          if (packet is OscBundle bundle)
-          {
-            foreach (var message in bundle)
-            {
-              if (message is OscMessage msg)
-              {
-                ProcessOscMessage(msg);
-              }
-            }
-          }
-          else if (packet is OscMessage message)
-          {
-            ProcessOscMessage(message);
-          }
+			FTData[message.Address] = (float)message[0];
 
-          resetEvent.Set();
-        }
-        catch (Exception ex)
-        {
-          UniLog.Log($"[VRCFTReceiver] Error in OSCClient ListenLoop: {ex.Message}");
-          Thread.Sleep(100);
-        }
-      }
+			if (message.Address.StartsWith(EYE_PREFIX))
+			{
+				LastEyeTracking = DateTime.UtcNow;
+			}
+			else if (message.Address.StartsWith(MOUTH_PREFIX))
+			{
+				LastFaceTracking = DateTime.UtcNow;
+			}
+		}
 
-      UniLog.Log("[VRCFTReceiver] OSCClient ListenLoop ended");
-    }
+		public static void SendMessage(IPAddress ipAddress, int port, string address, string value)
+		{
+			try
+			{
+				using (var sender = new OscSender(ipAddress, port))
+				{
+					sender.Connect();
+					sender.Send(new OscMessage(address, value));
+				}
+				UniLog.Log($"[VRCFTReceiver] Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
+			}
+			catch (Exception ex)
+			{
+				UniLog.Log($"[VRCFTReceiver] Error sending OSC message: {ex.Message}");
+			}
+		}
 
-    private void AttemptReconnect()
-    {
-      try
-      {
-        _lastReconnectAttempt = DateTime.UtcNow;
-        receiver?.Close();
-        receiver = new OscReceiver(_ip, _port);
-        receiver.Connect();
-        UniLog.Log("[VRCFTReceiver] Successfully reconnected OSC receiver");
-      }
-      catch (Exception ex)
-      {
-        UniLog.Error($"[VRCFTReceiver] Failed to reconnect OSC receiver: {ex.Message}");
-      }
-    }
-
-    private void ProcessOscMessage(OscMessage message)
-    {
-      if (message == null)
-      {
-        return;
-      }
-
-      var index = Expressions.GetIndex(message.Address);
-      if (index == ExpressionIndex.Count)
-      {
-        return;
-      }
-
-      lock (_dataLock)
-      {
-        _ftData[(int)index] = (float)message[0];
-      }
-
-      if (message.Address.StartsWith(EYE_PREFIX))
-      {
-        LastEyeTracking = DateTime.UtcNow;
-      }
-      else if (message.Address.StartsWith(MOUTH_PREFIX))
-      {
-        LastFaceTracking = DateTime.UtcNow;
-      }
-    }
-
-    public static void SendMessage(IPAddress ipAddress, int port, string address, string value)
-    {
-      try
-      {
-        using (var sender = new OscSender(ipAddress, port))
-        {
-          sender.Connect();
-          sender.Send(new OscMessage(address, value));
-        }
-        UniLog.Log($"[VRCFTReceiver] Sent OSC message to {ipAddress}:{port} - Address: {address}, Value: {value}");
-      }
-      catch (Exception ex)
-      {
-        UniLog.Log($"[VRCFTReceiver] Error sending OSC message: {ex.Message}");
-      }
-    }
-
-    public void Teardown()
-    {
-      UniLog.Log("[VRCFTReceiver] OSCClient teardown called");
-      LastEyeTracking = null;
-      LastFaceTracking = null;
-      _oscSocketState = false;
-      cancellationTokenSource?.Cancel();
-      receiver?.Close();
-      resetEvent?.Dispose();
-      receiveThread?.Join(TimeSpan.FromSeconds(5));
-      UniLog.Log("[VRCFTReceiver] OSCClient teardown completed");
-    }
-  }
+		public void Teardown()
+		{
+			UniLog.Log("[VRCFTReceiver] OSCClient teardown called");
+			LastEyeTracking = null;
+			LastFaceTracking = null;
+			_oscSocketState = false;
+			cancellationTokenSource?.Cancel();
+			receiver?.Close();
+			receiveThread?.Join(TimeSpan.FromSeconds(5));
+			UniLog.Log("[VRCFTReceiver] OSCClient teardown completed");
+		}
+	}
 }
