@@ -38,7 +38,15 @@ namespace VRCFTReceiver
 				Harmony harmony = new Harmony("dev.hazre.VRCFTReceiver");
 				harmony.PatchAll();
 
-				TryDirectDriverInitialization();
+				var engine = Engine.Current;
+				if (engine != null)
+				{
+					engine.RunPostInit(RegisterDriver);
+				}
+				else
+				{
+					UniLog.Error($"[VRCFTReceiver] OnEngineInit failed: Engine.Current is null");
+				}
 			}
 			catch (Exception ex)
 			{
@@ -59,17 +67,21 @@ namespace VRCFTReceiver
 			}
 		}
 
-		private static void TryDirectDriverInitialization()
+		private static void RegisterDriver()
 		{
 			try
 			{
 				var engine = Engine.Current;
 
-				if (engine?.InputInterface != null && VRCFTDriver == null)
+				if (engine.InputInterface != null)
 				{
 					VRCFTDriver = new Driver();
 					engine.InputInterface.RegisterInputDriver(VRCFTDriver);
 					UniLog.Log("[VRCFTReceiver] Driver initialized successfully");
+				}
+				else
+				{
+					UniLog.Error($"[VRCFTReceiver] RegisterDriver failed: Engine.InputInterface is null");
 				}
 			}
 			catch (Exception ex)
