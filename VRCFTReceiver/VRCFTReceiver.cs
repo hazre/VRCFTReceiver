@@ -41,7 +41,7 @@ namespace VRCFTReceiver
 				var engine = Engine.Current;
 				if (engine != null)
 				{
-					engine.RunPostInit(RegisterDriver);
+					engine.RunPostInit(() => RegisterDriver(engine));
 				}
 				else
 				{
@@ -67,12 +67,10 @@ namespace VRCFTReceiver
 			}
 		}
 
-		private static void RegisterDriver()
+		private static void RegisterDriver(Engine engine)
 		{
 			try
 			{
-				var engine = Engine.Current;
-
 				if (engine.InputInterface != null)
 				{
 					VRCFTDriver = new Driver();
