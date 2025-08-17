@@ -19,6 +19,7 @@
 		<CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
 		<DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
 		<DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -91,11 +92,4 @@
 		<Message Text="Copied MeaMod.DNS.dll to $(GamePath)rml_libs" Importance="high" Condition="Exists('$(TargetDir)MeaMod.DNS.dll')" />
 		<Message Text="Warning: MeaMod.DNS.dll not found in $(TargetDir)" Importance="high" Condition="!Exists('$(TargetDir)MeaMod.DNS.dll')" />
 	</Target>
-
-	<ItemGroup>
-		<Reference Update="@(Reference)">
-			<Private>false</Private>
-			<PrivateAssets>all</PrivateAssets>
-		</Reference>
-	</ItemGroup>
 </Project>
