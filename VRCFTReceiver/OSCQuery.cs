@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Elements.Core;
+using Newtonsoft.Json.Linq;
 using VRC.OSCQuery;
+using VrcOscQueryExtensions = VRC.OSCQuery.Extensions;
 
 namespace VRCFTReceiver
 {
@@ -13,6 +17,7 @@ namespace VRCFTReceiver
 		public readonly List<OSCQueryServiceProfile> profiles = [];
 		private CancellationTokenSource _cancellationTokenSource;
 		private Thread _oscQueryThread;
+		private static readonly HttpClient _httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
 
 		public OSCQuery(int udpPort)
 		{
@@ -22,7 +27,7 @@ namespace VRCFTReceiver
 		}
 		private void RunOSCQuery(int udpPort)
 		{
-			var tcpPort = Extensions.GetAvailableTcpPort();
+			var tcpPort = VrcOscQueryExtensions.GetAvailableTcpPort();
 
 			service = new OSCQueryServiceBuilder()
 				.WithDiscovery(new MeaModDiscovery())
@@ -70,6 +75,60 @@ namespace VRCFTReceiver
 			}
 		}
 
+		/// <summary>
+		/// Query a discovered OSCQuery service's HOST_INFO endpoint to get the OSC UDP port.
+		/// The profile.port is the TCP/HTTP port, but we need the OSC UDP port for sending messages.
+		/// </summary>
+		public static int? GetOscPortFromHostInfo(OSCQueryServiceProfile profile)
+		{
+			try
+			{
+				var primaryUrl = $"http://{profile.address}:{profile.port}?HOST_INFO";
+				UniLog.Log($"[VRCFTReceiver] Querying HOST_INFO at {primaryUrl}");
+
+				var oscPort = TryQueryOscPort(primaryUrl, profile.name);
+				if (oscPort.HasValue)
+				{
+					return oscPort;
+				}
+
+				if (!IPAddress.IsLoopback(profile.address))
+				{
+					var loopbackUrl = $"http://127.0.0.1:{profile.port}?HOST_INFO";
+					UniLog.Log($"[VRCFTReceiver] HOST_INFO retry on loopback at {loopbackUrl}");
+					oscPort = TryQueryOscPort(loopbackUrl, profile.name);
+					if (oscPort.HasValue)
+					{
+						return oscPort;
+					}
+				}
+
+				return null;
+			}
+			catch (Exception ex)
+			{
+				UniLog.Log($"[VRCFTReceiver] Failed to query HOST_INFO for {profile.name}: {ex.Message}");
+				return null;
+			}
+		}
+
+		private static int? TryQueryOscPort(string url, string profileName)
+		{
+			try
+			{
+				var response = _httpClient.GetStringAsync(url).Result;
+				var hostInfo = JObject.Parse(response);
+				var oscPort = hostInfo["OSC_PORT"]?.Value<int>();
+				UniLog.Log($"[VRCFTReceiver] HOST_INFO response from {profileName}: OSC_PORT={oscPort}");
+				return oscPort;
+			}
+			catch (Exception ex)
+			{
+				UniLog.Log($"[VRCFTReceiver] HOST_INFO query failed ({url}): {ex.Message}");
+				return null;
+			}
+		}
+
 		private void StartAutoRefreshServices(double interval, CancellationToken cancellationToken)
 		{
 			UniLog.Log("[VRCFTReceiver] OSCQuery start StartAutoRefreshServices");
@@ -80,7 +139,6 @@ namespace VRCFTReceiver
 					try
 					{
 						service.RefreshServices();
-						UniLog.Log("[VRCFTReceiver] OSCQuery RefreshedServices");
 						await Task.Delay(TimeSpan.FromMilliseconds(interval), cancellationToken);
 					}
 					catch (OperationCanceledException)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using Elements.Core;
 using FrooxEngine;
@@ -267,12 +268,66 @@ public class Driver : IInputDriver, IDisposable
 
 	public void AvatarChange()
 	{
-		foreach (var profile in _OSCQuery.profiles)
+		if (_OSCQuery == null)
+		{
+			UniLog.Log("[VRCFTReceiver] AvatarChange: OSCQuery not initialized yet, skipping");
+			return;
+		}
+
+		List<VRC.OSCQuery.OSCQueryServiceProfile> profilesCopy;
+		lock (_OSCQuery.profiles)
+		{
+			profilesCopy = new List<VRC.OSCQuery.OSCQueryServiceProfile>(_OSCQuery.profiles);
+		}
+
+		UniLog.Log($"[VRCFTReceiver] AvatarChange: checking {profilesCopy.Count} discovered profiles");
+
+		foreach (var profile in profilesCopy)
 		{
 			if (profile.name.StartsWith("VRCFT"))
 			{
-				OSCClient.SendMessage(profile.address, profile.port, "/avatar/change", "default");
+				var targetAddress = ResolveTargetAddress(profile.address);
+				// profile.port is the TCP/HTTP port from OSCQuery discovery.
+				// We need to query HOST_INFO to get the actual OSC UDP port.
+				var oscPort = OSCQuery.GetOscPortFromHostInfo(profile);
+				if (oscPort.HasValue)
+				{
+					UniLog.Log($"[VRCFTReceiver] AvatarChange: sending /avatar/change to {profile.name} at {targetAddress}:{oscPort.Value} (HTTP port: {profile.port}, profile address: {profile.address})");
+					OSCClient.SendMessage(targetAddress, oscPort.Value, "/avatar/change", "default");
+				}
+				else
+				{
+					UniLog.Log($"[VRCFTReceiver] AvatarChange: could not get OSC port for {profile.name}, falling back to profile port {profile.port}");
+					OSCClient.SendMessage(targetAddress, profile.port, "/avatar/change", "default");
+				}
 			}
 		}
+	}
+
+	private static IPAddress ResolveTargetAddress(IPAddress profileAddress)
+	{
+		try
+		{
+			if (VRCFTReceiver.config != null)
+			{
+				var cfg = VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_IP);
+				if (!string.IsNullOrWhiteSpace(cfg) && IPAddress.TryParse(cfg, out var cfgIp))
+				{
+					return cfgIp;
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			UniLog.Log($"[VRCFTReceiver] ResolveTargetAddress: failed to read config IP: {ex.Message}");
+		}
+
+		// Latest VRCFT listens on loopback only for OSC input.
+		if (profileAddress != null && IPAddress.IsLoopback(profileAddress))
+		{
+			return profileAddress;
+		}
+
+		return IPAddress.Loopback;
 	}
 }

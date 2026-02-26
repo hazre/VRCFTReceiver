@@ -12,7 +12,7 @@ A [ResoniteModLoader](https://github.com/resonite-modding-group/ResoniteModLoade
 
 ## Requirements
 
-- [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) 5.2.3
+- [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) 5.4.2.0
 
 ## How it works
 
@@ -48,12 +48,10 @@ All parameters are processed in real-time and automatically mapped to Resonite's
 
 ## Tested Configurations
 
-| VRCFT Version | Module       | Device              | Tested By |
-|---------------|--------------|--------------------|-----------|
-| v5.2.3        | Varjo        | Varjo Aero          | ginjake   |
-| v5.2.3        | iFacialMocap | N/A                 | ginjake   |
-| v5.2.3        | ALVR         | VIVE Focus Vision   | ginjake   |
-| v5.2.3        | LiveLink     | iPad Pro            | hazre     |
+| VRCFT Version | Module       | Device | Tested By |
+|---------------|--------------|--------|-----------|
+| v5.4.2.0      | iFacialMocap | N/A    | ginjake   |
+| v5.4.2.0      | Babble       | N/A    | ginjake   |
 
 ## Credits
 
