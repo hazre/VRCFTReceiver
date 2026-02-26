@@ -341,3 +341,9 @@ healthchecksdb
 
 # added by art0007i, it's a script that generates manifest json
 /makemanifest.py
+
+# Serena files
+.serena/
+
+# claude code files
+.claude/
