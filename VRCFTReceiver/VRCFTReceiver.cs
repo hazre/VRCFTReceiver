@@ -26,7 +26,7 @@ namespace VRCFTReceiver
 		public static Driver VRCFTDriver;
 		public override string Name => "VRCFTReceiver";
 		public override string Author => "hazre, ginjake";
-		public override string Version => "2.1.0";
+		public override string Version => "2.2.0";
 		public override string Link => "https://github.com/hazre/VRCFTReceiver";
 
 		public override void OnEngineInit()
