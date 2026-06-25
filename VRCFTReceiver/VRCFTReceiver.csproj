@@ -1,95 +1,76 @@
 <?xml version='1.0' encoding='utf-8'?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<ProjectGuid>{FFA93FA9-4040-46FF-8A1C-2A190C0CC235}</ProjectGuid>
-		<OutputType>Library</OutputType>
-		<AppDesignerFolder>Properties</AppDesignerFolder>
-		<RootNamespace>VRCFTReceiver</RootNamespace>
-		<AssemblyTitle>VRCFTReceiver</AssemblyTitle>
-		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-		<LangVersion>12</LangVersion>
-		<FileAlignment>512</FileAlignment>
-		<Deterministic>true</Deterministic>
-		<GamePath>$(MSBuildThisFileDirectory)Resonite</GamePath>
-		<GamePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</GamePath>
-		<GamePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</GamePath>
-		<GamePath Condition="Exists('E:\Programs\Steam\steamapps\common\Resonite\')">E:\Programs\Steam\steamapps\common\Resonite\</GamePath>
-		<GamePath Condition="Exists('$(HOME)\AppData\Local\RESO Launcher\profiles\premod\Game\')">$(HOME)\AppData\Local\RESO Launcher\profiles\premod\Game\</GamePath>
-		<CopyLocal>false</CopyLocal>
-		<CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
-		<DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
-		<DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
-		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-	</PropertyGroup>
+    <PropertyGroup>
+        <ProjectGuid>{FFA93FA9-4040-46FF-8A1C-2A190C0CC235}</ProjectGuid>
+        <OutputType>Library</OutputType>
+        <AppDesignerFolder>Properties</AppDesignerFolder>
+        <RootNamespace>VRCFTReceiver</RootNamespace>
+        <AssemblyTitle>VRCFTReceiver</AssemblyTitle>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <LangVersion>12</LangVersion>
+        <FileAlignment>512</FileAlignment>
+        <Deterministic>true</Deterministic>
+        <GamePath>$(MSBuildThisFileDirectory)Resonite</GamePath>
+        <GamePath Condition="Exists('C:\Program Files (x86)\Steam\steamapps\common\Resonite\')">C:\Program Files (x86)\Steam\steamapps\common\Resonite\</GamePath>
+        <GamePath Condition="Exists('$(HOME)/.steam/steam/steamapps/common/Resonite/')">$(HOME)/.steam/steam/steamapps/common/Resonite/</GamePath>
+        <GamePath Condition="Exists('E:\Programs\Steam\steamapps\common\Resonite\')">E:\Programs\Steam\steamapps\common\Resonite\</GamePath>
+        <GamePath Condition="Exists('$(HOME)\AppData\Local\RESO Launcher\profiles\premod\Game\')">$(HOME)\AppData\Local\RESO Launcher\profiles\premod\Game\</GamePath>
+        <CopyLocal>false</CopyLocal>
+        <CopyToMods Condition="'$(CopyToMods)'==''">true</CopyToMods>
+        <DebugSymbols Condition="'$(Configuration)'=='Release'">false</DebugSymbols>
+        <DebugType Condition="'$(Configuration)'=='Release'">None</DebugType>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <TargetFramework>net10.0</TargetFramework>
+        <GameLibs>$(GamePath)</GameLibs>
+    </PropertyGroup>
 
-	<PropertyGroup>
-		<IsNet9 Condition="Exists('$(GamePath)\Resonite.dll')">true</IsNet9>
-		<IsNet9 Condition="!Exists('$(GamePath)\Resonite.dll')">false</IsNet9>
-	</PropertyGroup>
+    <ItemGroup>
+        <Reference Include="HarmonyLib">
+            <HintPath Condition="Exists('$(GamePath)Libraries\0Harmony.dll')">$(GamePath)Libraries\0Harmony.dll</HintPath>
+            <HintPath Condition="Exists('$(GamePath)0Harmony.dll')">$(GamePath)0Harmony.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Elements.Core">
+            <HintPath>$(GameLibs)Elements.Core.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Renderite.Shared">
+            <HintPath>$(GameLibs)Renderite.Shared.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="FrooxEngine">
+            <HintPath>$(GameLibs)FrooxEngine.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Rug.Osc">
+            <HintPath>$(GameLibs)Rug.Osc.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ResoniteModLoader">
+            <HintPath Condition="Exists('$(GamePath)ResoniteModLoader.dll')">$(GamePath)ResoniteModLoader.dll</HintPath>
+            <HintPath Condition="Exists('$(GamePath)Libraries\ResoniteModLoader.dll')">$(GamePath)Libraries\ResoniteModLoader.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="Newtonsoft.Json">
+            <HintPath>$(GameLibs)Newtonsoft.Json.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <PackageReference Include="VRChat.OSCQuery" Version="0.0.7"/>
+<!--        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0"/>-->
+    </ItemGroup>
 
-	<PropertyGroup Condition="'$(IsNet9)' == 'false'">
-		<TargetFramework>net472</TargetFramework>
-		<GameLibs>$(GamePath)Resonite_Data\Managed\</GameLibs>
-	</PropertyGroup>
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
+        <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GamePath)rml_mods"/>
+        <Message Text="Copied $(TargetFileName) to $(GamePath)rml_mods" Importance="high"/>
 
-	<PropertyGroup Condition="'$(IsNet9)' == 'true'">
-		<TargetFramework>net9.0</TargetFramework>
-		<DefineConstants>IsNet9</DefineConstants>
-		<GameLibs>$(GamePath)</GameLibs>
-	</PropertyGroup>
+        <!-- Copy OSCQuery DLL if it exists -->
+        <Copy SourceFiles="$(TargetDir)vrc-oscquery-lib.dll" DestinationFolder="$(GamePath)rml_libs" Condition="Exists('$(TargetDir)vrc-oscquery-lib.dll')"/>
+        <Message Text="Copied vrc-oscquery-lib.dll to $(GamePath)rml_libs" Importance="high" Condition="Exists('$(TargetDir)vrc-oscquery-lib.dll')"/>
+        <Message Text="Warning: vrc-oscquery-lib.dll not found in $(TargetDir)" Importance="high" Condition="!Exists('$(TargetDir)vrc-oscquery-lib.dll')"/>
 
-	<ItemGroup Condition="'$(IsNet9)' == 'true'">
-		<Reference Include="Renderite.Shared">
-			<HintPath>$(GameLibs)Renderite.Shared.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Reference Include="HarmonyLib">
-			<HintPath Condition="Exists('$(GamePath)rml_libs\0Harmony-Net9.dll')">$(GamePath)rml_libs\0Harmony-Net9.dll</HintPath>
-			<HintPath Condition="Exists('$(GamePath)0Harmony-Net9.dll')">$(GamePath)0Harmony-Net9.dll</HintPath>
-			<HintPath Condition="Exists('$(GamePath)rml_libs\0Harmony.dll')">$(GamePath)rml_libs\0Harmony.dll</HintPath>
-			<HintPath Condition="Exists('$(GamePath)0Harmony.dll')">$(GamePath)0Harmony.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="Elements.Core">
-			<HintPath>$(GameLibs)Elements.Core.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="FrooxEngine">
-			<HintPath>$(GameLibs)FrooxEngine.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="Rug.Osc">
-			<HintPath>$(GameLibs)Rug.Osc.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="ResoniteModLoader">
-			<HintPath Condition="Exists('$(GamePath)ResoniteModLoader.dll')">$(GamePath)ResoniteModLoader.dll</HintPath>
-			<HintPath Condition="Exists('$(GamePath)Libraries\ResoniteModLoader.dll')">$(GamePath)Libraries\ResoniteModLoader.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<Reference Include="Newtonsoft.Json">
-			<HintPath>$(GameLibs)Newtonsoft.Json.dll</HintPath>
-			<Private>False</Private>
-		</Reference>
-		<PackageReference Include="VRChat.OSCQuery" Version="0.0.7" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-	</ItemGroup>
-
-<Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(CopyToMods)'=='true'">
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(GamePath)rml_mods" />
-		<Message Text="Copied $(TargetFileName) to $(GamePath)rml_mods" Importance="high" />
-
-		<!-- Copy OSCQuery DLL if it exists -->
-		<Copy SourceFiles="$(TargetDir)vrc-oscquery-lib.dll" DestinationFolder="$(GamePath)rml_libs" Condition="Exists('$(TargetDir)vrc-oscquery-lib.dll')" />
-		<Message Text="Copied vrc-oscquery-lib.dll to $(GamePath)rml_libs" Importance="high" Condition="Exists('$(TargetDir)vrc-oscquery-lib.dll')" />
-		<Message Text="Warning: vrc-oscquery-lib.dll not found in $(TargetDir)" Importance="high" Condition="!Exists('$(TargetDir)vrc-oscquery-lib.dll')" />
-
-		<!-- Copy MeaMod.DNS DLL if it exists -->
-		<Copy SourceFiles="$(TargetDir)MeaMod.DNS.dll" DestinationFolder="$(GamePath)rml_libs" Condition="Exists('$(TargetDir)MeaMod.DNS.dll')" />
-		<Message Text="Copied MeaMod.DNS.dll to $(GamePath)rml_libs" Importance="high" Condition="Exists('$(TargetDir)MeaMod.DNS.dll')" />
-		<Message Text="Warning: MeaMod.DNS.dll not found in $(TargetDir)" Importance="high" Condition="!Exists('$(TargetDir)MeaMod.DNS.dll')" />
-	</Target>
+        <!-- Copy MeaMod.DNS DLL if it exists -->
+        <Copy SourceFiles="$(TargetDir)MeaMod.DNS.dll" DestinationFolder="$(GamePath)rml_libs" Condition="Exists('$(TargetDir)MeaMod.DNS.dll')"/>
+        <Message Text="Copied MeaMod.DNS.dll to $(GamePath)rml_libs" Importance="high" Condition="Exists('$(TargetDir)MeaMod.DNS.dll')"/>
+        <Message Text="Warning: MeaMod.DNS.dll not found in $(TargetDir)" Importance="high" Condition="!Exists('$(TargetDir)MeaMod.DNS.dll')"/>
+    </Target>
 </Project>
