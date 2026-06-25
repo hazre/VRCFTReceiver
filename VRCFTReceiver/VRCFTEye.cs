@@ -1,38 +1,37 @@
 using Elements.Core;
 
-namespace VRCFTReceiver
+namespace VRCFTReceiver;
+
+// based on BlueCyro's Impressive code https://github.com/BlueCyro/Impressive
+public struct VrcftEye
 {
-	// based on BlueCyro's Impressive code https://github.com/BlueCyro/Impressive
-	public struct VRCFTEye
-	{
-		public readonly bool IsTracking => IsValid && Eyelid > 0.1f;
+    public readonly bool IsTracking => IsValid && Eyelid > 0.1f;
 
-		public readonly bool IsValid => EyeDirection.Magnitude > 0f && EyeDirection.SqrMagnitude > 0f && MathX.IsValid(EyeDirection) && EyeDirection.IsValid() && EyeRotation.IsValid;
+    public readonly bool IsValid => EyeDirection.Magnitude > 0f && EyeDirection.SqrMagnitude > 0f && EyeDirection.IsValid() && EyeDirection.IsValid() && EyeRotation.IsValid;
 
-		public float3 EyeDirection
-		{
-			readonly get => EyeRotation * float3.Forward;
-			set => EyeRotation = floatQ.LookRotation(EyeDirection);
-		}
+    public float3 EyeDirection
+    {
+        readonly get => EyeRotation * float3.Forward;
+        set => EyeRotation = floatQ.LookRotation(EyeDirection);
+    }
 
-		public floatQ EyeRotation;
+    public floatQ EyeRotation;
 
-		private float DirX;
-		private float DirY;
+    private float _dirX;
+    private float _dirY;
 
-		public float Eyelid;
+    public float Eyelid;
 
-		public void SetDirectionFromXY(float? X = null, float? Y = null)
-		{
-			DirX = X ?? DirX;
-			DirY = Y ?? DirY;
+    public void SetDirectionFromXy(float? x = null, float? y = null)
+    {
+        _dirX = x ?? _dirX;
+        _dirY = y ?? _dirY;
 
-			// Get the angles out of the eye look
-			float xAng = MathX.Asin(DirX);
-			float yAng = MathX.Asin(DirY);
+        // Get the angles out of the eye look
+        float xAng = MathX.Asin(_dirX);
+        float yAng = MathX.Asin(_dirY);
 
-			// Convert to cartesian coordinates
-			EyeRotation = floatQ.Euler(yAng * MathX.Rad2Deg, xAng * MathX.Rad2Deg, 0f);
-		}
-	}
+        // Convert to cartesian coordinates
+        EyeRotation = floatQ.Euler(yAng * MathX.Rad2Deg, xAng * MathX.Rad2Deg, 0f);
+    }
 }

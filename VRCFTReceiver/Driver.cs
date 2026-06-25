@@ -1,278 +1,338 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using Elements.Core;
 using FrooxEngine;
-using Rug.Osc;
+using FrooxEngine.CommonAvatar;
+using HarmonyLib;
+using ResoniteModLoader;
+using VRC.OSCQuery;
 
 namespace VRCFTReceiver;
 
 public class Driver : IInputDriver, IDisposable
 {
-	private InputInterface input;
-	private Eyes eyes;
-	private Mouth mouth;
-	private OSCClient _OSCClient;
-	private OSCQuery _OSCQuery;
-	private IPAddress IP;
-	private int ReceiverPort;
-	private bool EnableEyeTracking;
-	private bool EnableFaceTracking;
-	private static int TrackingTimeout;
-	public bool EyesReversedY = false;
-	public bool EyesReversedX = false;
-	public VRCFTEye EyeLeft = new();
-	public VRCFTEye EyeRight = new();
-	public VRCFTEye EyeCombined => new()
-	{
-		Eyelid = MathX.Max(EyeLeft.Eyelid, EyeRight.Eyelid),
-		EyeRotation = CombinedEyesDir
-	};
-	public floatQ CombinedEyesDir
-	{
-		get
-		{
-			if (EyeLeft.IsValid && EyeRight.IsValid && EyeLeft.IsTracking && EyeRight.IsTracking)
-				_lastValidCombined = MathX.Slerp(EyeLeft.EyeRotation, EyeRight.EyeRotation, 0.5f);
-			else if (EyeLeft.IsValid && EyeLeft.IsTracking)
-				_lastValidCombined = EyeLeft.EyeRotation;
-			else if (EyeRight.IsValid && EyeRight.IsTracking)
-				_lastValidCombined = EyeRight.EyeRotation;
+    private floatQ _lastValidCombined = floatQ.Identity;
+    private OscClient _oscClient;
+    private OscQuery _oscQuery;
+    public VrcftEye EyeLeft;
+    public VrcftEye EyeRight;
+    private Eyes _eyes;
+    private InputInterface _input;
+    private Mouth _mouth;
 
-			return _lastValidCombined;
-		}
-	}
-	private floatQ _lastValidCombined = floatQ.Identity;
-	public int UpdateOrder => 100;
-	public void CollectDeviceInfos(DataTreeList list)
-	{
-		DataTreeDictionary eyeDict = new();
-		eyeDict.Add("Name", "VRCFaceTracking OSC");
-		eyeDict.Add("Type", "Eye Tracking");
-		eyeDict.Add("Model", "VRCFaceTracking OSC");
-		list.Add(eyeDict);
-		DataTreeDictionary mouthDict = new();
-		mouthDict.Add("Name", "VRCFaceTracking OSC");
-		mouthDict.Add("Type", "Lip Tracking");
-		mouthDict.Add("Model", "VRCFaceTracking OSC");
-		list.Add(mouthDict);
-	}
-	public void RegisterInputs(InputInterface inputInterface)
-	{
-		try
-		{
-			input = inputInterface;
-			eyes = new Eyes(inputInterface, "VRCFaceTracking OSC", supportsPupilTracking: false);
-			mouth = new Mouth(inputInterface, "VRCFaceTracking OSC", new MouthParameterGroup[16]
-			{
-				MouthParameterGroup.JawPose,
-				MouthParameterGroup.JawOpen,
-				MouthParameterGroup.TonguePose,
-				MouthParameterGroup.LipRaise,
-				MouthParameterGroup.LipHorizontal,
-				MouthParameterGroup.SmileFrown,
-				MouthParameterGroup.MouthDimple,
-				MouthParameterGroup.MouthPout,
-				MouthParameterGroup.LipOverturn,
-				MouthParameterGroup.LipOverUnder,
-				MouthParameterGroup.LipStretchTighten,
-				MouthParameterGroup.LipsPress,
-				MouthParameterGroup.CheekPuffSuck,
-				MouthParameterGroup.CheekRaise,
-				MouthParameterGroup.ChinRaise,
-				MouthParameterGroup.NoseWrinkle
-			});
-			OnSettingsChanged();
-			VRCFTReceiver.config.OnThisConfigurationChanged += (_) => OnSettingsChanged();
-			input.Engine.OnShutdown += Dispose;
+    public VrcftEye EyeCombined => new VrcftEye
+    {
+        Eyelid = MathX.Max(EyeLeft.Eyelid, EyeRight.Eyelid),
+        EyeRotation = CombinedEyesDir
+    };
 
-			// Send initial avatar change immediately
-			AvatarChange();
+    public floatQ CombinedEyesDir
+    {
+        get
+        {
+            if (EyeLeft.IsValid && EyeRight.IsValid && EyeLeft.IsTracking && EyeRight.IsTracking)
+            {
+                _lastValidCombined = MathX.Slerp(EyeLeft.EyeRotation, EyeRight.EyeRotation, 0.5f);
+            }
+            else if (EyeLeft.IsValid && EyeLeft.IsTracking)
+            {
+                _lastValidCombined = EyeLeft.EyeRotation;
+            }
+            else if (EyeRight.IsValid && EyeRight.IsTracking)
+            {
+                _lastValidCombined = EyeRight.EyeRotation;
+            }
 
-			UniLog.Log("[VRCFTReceiver] Finished Initializing VRCFT driver");
-		}
-		catch (Exception ex)
-		{
-			UniLog.Error($"[VRCFTReceiver] Failed to register inputs: {ex}");
-			throw;
-		}
-	}
+            return _lastValidCombined;
+        }
+    }
 
-	private void OnSettingsChanged()
-	{
-		EnableEyeTracking = VRCFTReceiver.config.GetValue(VRCFTReceiver.ENABLE_EYE_TRACKING);
-		EnableFaceTracking = VRCFTReceiver.config.GetValue(VRCFTReceiver.ENABLE_FACE_TRACKING);
-		ReceiverPort = VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_RECEIVER_PORT);
-		IP = IPAddress.Parse(VRCFTReceiver.config.GetValue(VRCFTReceiver.KEY_IP));
-		EyesReversedY = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_Y);
-		EyesReversedX = VRCFTReceiver.config.GetValue(VRCFTReceiver.REVERSE_EYES_X);
-		TrackingTimeout = VRCFTReceiver.config.GetValue(VRCFTReceiver.TRACKING_TIMEOUT_SECONDS);
-		UniLog.Log($"[VRCFTReceiver] Starting VRCFTReceiver with these settings: EnableEyeTracking: {EnableEyeTracking}, EnableFaceTracking: {EnableFaceTracking},  ReceiverPort:{ReceiverPort}, IP: {IP}, EyesReversedY: {EyesReversedY}, EyesReversedX: {EyesReversedX}, TrackingTimeout: {TrackingTimeout}");
-		InitializeOSCConnection();
-	}
-	private void InitializeOSCConnection()
-	{
-		if (ReceiverPort != 0 && IP != null)
-		{
-			try
-			{
-				if (_OSCClient != null) _OSCClient.Teardown();
-				_OSCClient = new OSCClient(IP, ReceiverPort);
-				if (_OSCQuery != null) _OSCQuery.Teardown();
-				_OSCQuery = new OSCQuery(ReceiverPort);
-			}
-			catch (Exception ex)
-			{
-				UniLog.Error("[VRCFTReceiver] Exception when starting OSCConnection:\n" + ex);
-			}
-		}
-		else
-		{
-			UniLog.Warning("[VRCFTReceiver] OSCConnection not started because port or IP is not valid");
-		}
-	}
-	public void UpdateInputs(float deltaTime)
-	{
-		try
-		{
-			UpdateEyes(deltaTime);
-			UpdateMouth(deltaTime);
-		}
-		catch (Exception ex)
-		{
-			UniLog.Error($"[VRCFTReceiver] UpdateInputs Failed! Exception: {ex}");
-		}
-	}
-	private void UpdateEyes(float deltaTime)
-	{
-		if (!IsTracking(OSCClient.LastEyeTracking) || !EnableEyeTracking)
-		{
-			eyes.IsEyeTrackingActive = false;
-			eyes.SetTracking(state: false);
-			return;
-		}
-		eyes.IsEyeTrackingActive = true;
-		eyes.SetTracking(state: true);
+    public void Dispose()
+    {
+        ResoniteMod.Debug("Driver disposal called");
+        
+        VrcftReceiver.KeyReceiverPort.OnChanged -= SettingsChanged;
+        VrcftReceiver.KeyIp.OnChanged -= SettingsChanged;
+        VrcftReceiver.AvatarName.OnChanged -= AvatarChange;
+        
+        _oscClient?.Dispose();
+        _oscQuery?.Dispose();
+        ResoniteMod.Debug("Driver disposed");
+    }
 
-		EyeLeft.SetDirectionFromXY(
-			X: EyesReversedX ? -OSCClient.FTData[Expressions.EyeLeftX] : OSCClient.FTData[Expressions.EyeLeftX],
-			Y: EyesReversedY ? -OSCClient.FTData[Expressions.EyeLeftY] : OSCClient.FTData[Expressions.EyeLeftY]
-		);
-		EyeRight.SetDirectionFromXY(
-			X: EyesReversedX ? -OSCClient.FTData[Expressions.EyeRightX] : OSCClient.FTData[Expressions.EyeRightX],
-			Y: EyesReversedY ? -OSCClient.FTData[Expressions.EyeRightY] : OSCClient.FTData[Expressions.EyeRightY]
-		);
+    public int UpdateOrder => 100;
 
-		UpdateEye(EyeLeft, eyes.LeftEye);
-		UpdateEye(EyeRight, eyes.RightEye);
-		UpdateEye(EyeCombined, eyes.CombinedEye);
+    public void CollectDeviceInfos(DataTreeList list)
+    {
+        DataTreeDictionary eyeDict = new DataTreeDictionary();
+        eyeDict.Add("Name", "VRCFaceTracking OSC");
+        eyeDict.Add("Type", "Eye Tracking");
+        eyeDict.Add("Model", "VRCFaceTracking OSC");
+        list.Add(eyeDict);
+        DataTreeDictionary mouthDict = new DataTreeDictionary();
+        mouthDict.Add("Name", "VRCFaceTracking OSC");
+        mouthDict.Add("Type", "Lip Tracking");
+        mouthDict.Add("Model", "VRCFaceTracking OSC");
+        list.Add(mouthDict);
+    }
 
-		eyes.LeftEye.Openness = OSCClient.FTData[Expressions.EyeOpenLeft];
-		eyes.RightEye.Openness = OSCClient.FTData[Expressions.EyeOpenRight];
-		eyes.LeftEye.Widen = OSCClient.FTData[Expressions.EyeWideLeft];
-		eyes.RightEye.Widen = OSCClient.FTData[Expressions.EyeWideRight];
-		eyes.LeftEye.Squeeze = OSCClient.FTData[Expressions.EyeSquintLeft];
-		eyes.RightEye.Squeeze = OSCClient.FTData[Expressions.EyeSquintRight];
+    public void RegisterInputs(InputInterface inputInterface)
+    {
+        try
+        {
+            _input = inputInterface;
+            _eyes = new Eyes(inputInterface, "VRCFaceTracking OSC", true);
+            _mouth = new Mouth(inputInterface, "VRCFaceTracking OSC", new MouthParameterGroup[]
+            {
+                MouthParameterGroup.JawPose,
+                MouthParameterGroup.JawOpen,
+                MouthParameterGroup.TonguePose,
+                MouthParameterGroup.LipRaise,
+                MouthParameterGroup.LipHorizontal,
+                MouthParameterGroup.SmileFrown,
+                MouthParameterGroup.MouthDimple,
+                MouthParameterGroup.MouthPout,
+                MouthParameterGroup.LipOverturn,
+                MouthParameterGroup.LipOverUnder,
+                MouthParameterGroup.LipStretchTighten,
+                MouthParameterGroup.LipsPress,
+                MouthParameterGroup.CheekPuffSuck,
+                MouthParameterGroup.CheekRaise,
+                MouthParameterGroup.ChinRaise,
+                MouthParameterGroup.NoseWrinkle
+            });
+            InitializeOscConnection();
+            VrcftReceiver.KeyReceiverPort.OnChanged -= SettingsChanged;
+            VrcftReceiver.KeyIp.OnChanged -= SettingsChanged;
+            VrcftReceiver.AvatarName.OnChanged -= AvatarChange;
 
-		float leftBrowLowerer = OSCClient.FTData[Expressions.BrowPinchLeft] - OSCClient.FTData[Expressions.BrowLowererLeft];
-		eyes.LeftEye.InnerBrowVertical = OSCClient.FTData[Expressions.BrowInnerUpLeft] - leftBrowLowerer;
-		eyes.LeftEye.OuterBrowVertical = OSCClient.FTData[Expressions.BrowOuterUpLeft] - leftBrowLowerer;
+            VrcftReceiver.KeyReceiverPort.OnChanged += SettingsChanged;
+            VrcftReceiver.KeyIp.OnChanged += SettingsChanged;
+            VrcftReceiver.AvatarName.OnChanged += AvatarChange;
 
-		float rightBrowLowerer = OSCClient.FTData[Expressions.BrowPinchRight] - OSCClient.FTData[Expressions.BrowLowererRight];
-		eyes.RightEye.InnerBrowVertical = OSCClient.FTData[Expressions.BrowInnerUpRight] - rightBrowLowerer;
-		eyes.RightEye.OuterBrowVertical = OSCClient.FTData[Expressions.BrowOuterUpRight] - rightBrowLowerer;
+            ResoniteMod.Debug("Finished Initializing VRCFT driver");
+        }
+        catch (Exception ex)
+        {
+            ResoniteMod.Error($"Failed to register inputs: {ex}");
+            throw;
+        }
+    }
 
-		eyes.ComputeCombinedEyeParameters();
-		eyes.FinishUpdate();
-	}
-	public void UpdateEye(VRCFTEye source, Eye dest)
-	{
-		if (source.IsValid)
-		{
-			dest.UpdateWithRotation(source.EyeRotation);
-		}
-	}
-	private void UpdateMouth(float deltaTime)
-	{
-		if (!IsTracking(OSCClient.LastFaceTracking) || !EnableFaceTracking)
-		{
-			mouth.IsTracking = false;
-			return;
-		}
+    public void UpdateInputs(float deltaTime)
+    {
+        try
+        {
+            UpdateEyes(deltaTime);
+            UpdateMouth(deltaTime);
+        }
+        catch (Exception ex)
+        {
+            ResoniteMod.Error($"UpdateInputs Failed! Exception: {ex}");
+        }
+    }
 
-		mouth.IsTracking = true;
-		mouth.MouthLeftSmileFrown = OSCClient.FTData[Expressions.MouthSmileLeft] - OSCClient.FTData[Expressions.MouthFrownLeft];
-		mouth.MouthRightSmileFrown = OSCClient.FTData[Expressions.MouthSmileRight] - OSCClient.FTData[Expressions.MouthFrownRight];
-		mouth.MouthLeftDimple = OSCClient.FTData[Expressions.MouthDimpleLeft];
-		mouth.MouthRightDimple = OSCClient.FTData[Expressions.MouthDimpleRight];
-		mouth.CheekLeftPuffSuck = OSCClient.FTData[Expressions.CheekPuffSuckLeft];
-		mouth.CheekRightPuffSuck = OSCClient.FTData[Expressions.CheekPuffSuckRight];
-		mouth.CheekLeftRaise = OSCClient.FTData[Expressions.CheekSquintLeft];
-		mouth.CheekRightRaise = OSCClient.FTData[Expressions.CheekSquintRight];
-		mouth.LipUpperLeftRaise = OSCClient.FTData[Expressions.MouthUpperUpLeft];
-		mouth.LipUpperRightRaise = OSCClient.FTData[Expressions.MouthUpperUpRight];
-		mouth.LipLowerLeftRaise = OSCClient.FTData[Expressions.MouthLowerDownLeft];
-		mouth.LipLowerRightRaise = OSCClient.FTData[Expressions.MouthLowerDownRight];
-		mouth.MouthPoutLeft = OSCClient.FTData[Expressions.LipPuckerLowerLeft] - OSCClient.FTData[Expressions.LipPuckerUpperLeft];
-		mouth.MouthPoutRight = OSCClient.FTData[Expressions.LipPuckerLowerRight] - OSCClient.FTData[Expressions.LipPuckerUpperRight];
-		mouth.LipUpperHorizontal = OSCClient.FTData[Expressions.MouthUpperX];
-		mouth.LipLowerHorizontal = OSCClient.FTData[Expressions.MouthLowerX];
-		mouth.LipTopLeftOverturn = OSCClient.FTData[Expressions.LipFunnelUpperLeft];
-		mouth.LipTopRightOverturn = OSCClient.FTData[Expressions.LipFunnelUpperRight];
-		mouth.LipBottomLeftOverturn = OSCClient.FTData[Expressions.LipFunnelLowerLeft];
-		mouth.LipBottomRightOverturn = OSCClient.FTData[Expressions.LipFunnelLowerRight];
-		mouth.LipTopLeftOverUnder = -OSCClient.FTData[Expressions.LipSuckUpperLeft];
-		mouth.LipTopRightOverUnder = -OSCClient.FTData[Expressions.LipSuckUpperRight];
-		mouth.LipBottomLeftOverUnder = -OSCClient.FTData[Expressions.LipSuckLowerLeft];
-		mouth.LipBottomRightOverUnder = -OSCClient.FTData[Expressions.LipSuckLowerRight];
-		mouth.LipLeftStretchTighten = OSCClient.FTData[Expressions.MouthStretchLeft] - OSCClient.FTData[Expressions.MouthTightenerLeft];
-		mouth.LipRightStretchTighten = OSCClient.FTData[Expressions.MouthStretchRight] - OSCClient.FTData[Expressions.MouthTightenerRight];
-		mouth.LipsLeftPress = OSCClient.FTData[Expressions.MouthPressLeft];
-		mouth.LipsRightPress = OSCClient.FTData[Expressions.MouthPressRight];
-		mouth.Jaw = new float3(
-			OSCClient.FTData[Expressions.JawRight] - OSCClient.FTData[Expressions.JawLeft],
-			-OSCClient.FTData[Expressions.MouthClosed],
-			OSCClient.FTData[Expressions.JawForward]
-		);
-		mouth.JawOpen = MathX.Clamp01(OSCClient.FTData[Expressions.JawOpen] - OSCClient.FTData[Expressions.MouthClosed]);
-		mouth.Tongue = new float3(
-			OSCClient.FTData[Expressions.TongueX],
-			OSCClient.FTData[Expressions.TongueY],
-			OSCClient.FTData[Expressions.TongueOut]
-		);
-		mouth.TongueRoll = OSCClient.FTData[Expressions.TongueRoll];
-		mouth.NoseWrinkleLeft = OSCClient.FTData[Expressions.NoseSneerLeft];
-		mouth.NoseWrinkleRight = OSCClient.FTData[Expressions.NoseSneerRight];
-		mouth.ChinRaiseBottom = OSCClient.FTData[Expressions.MouthRaiserLower];
-		mouth.ChinRaiseTop = OSCClient.FTData[Expressions.MouthRaiserUpper];
-	}
-	public void Dispose()
-	{
-		UniLog.Log("[VRCFTReceiver] Driver disposal called");
-		_OSCClient?.Teardown();
-		_OSCQuery?.Teardown();
-		UniLog.Log("[VRCFTReceiver] Driver disposed");
-	}
-	private static bool IsTracking(DateTime? timestamp)
-	{
-		if (!timestamp.HasValue)
-		{
-			return false;
-		}
-		if ((DateTime.UtcNow - timestamp.Value).TotalSeconds > TrackingTimeout)
-		{
-			return false;
-		}
-		return true;
-	}
+    private void SettingsChanged(object value) => InitializeOscConnection();
 
-	public void AvatarChange()
-	{
-		foreach (var profile in _OSCQuery.profiles)
-		{
-			if (profile.name.StartsWith("VRCFT"))
-			{
-				OSCClient.SendMessage(profile.address, profile.port, "/avatar/change", "default");
-			}
-		}
-	}
+    private void InitializeOscConnection()
+    {
+        int port = VrcftReceiver.Config.GetValue(VrcftReceiver.KeyReceiverPort);
+        IPAddress address = IPAddress.Parse(VrcftReceiver.Config.GetValue(VrcftReceiver.KeyIp));
+        if (port != 0 && address != null)
+        {
+            try
+            {
+                _oscClient?.Dispose();
+                _oscClient = new OscClient(address, port);
+                _oscQuery?.Dispose();
+                _oscQuery = new OscQuery(port);
+
+                AvatarChange();
+            }
+            catch (Exception ex)
+            {
+                ResoniteMod.Error("Exception when starting OSCConnection:\n" + ex);
+            }
+        }
+        else
+        {
+            ResoniteMod.Warn("OSCConnection not started because port or IP is not valid");
+        }
+    }
+
+    private void UpdateEyes(float deltaTime)
+    {
+        if (!IsTracking(OscClient.LastEyeTracking) || !VrcftReceiver.Config.GetValue(VrcftReceiver.EnableEyeTracking))
+        {
+            _eyes.IsEyeTrackingActive = false;
+            _eyes.SetTracking(false);
+            return;
+        }
+
+        _eyes.IsEyeTrackingActive = true;
+        _eyes.SetTracking(true);
+
+        EyeLeft.SetDirectionFromXy(VrcftReceiver.Config.GetValue(VrcftReceiver.ReverseEyesX) ? -OscClient.FtData[Expressions.EyeLeftX] : OscClient.FtData[Expressions.EyeLeftX], VrcftReceiver.Config.GetValue(VrcftReceiver.ReverseEyesY) ? -OscClient.FtData[Expressions.EyeLeftY] : OscClient.FtData[Expressions.EyeLeftY]);
+        EyeRight.SetDirectionFromXy(VrcftReceiver.Config.GetValue(VrcftReceiver.ReverseEyesX) ? -OscClient.FtData[Expressions.EyeRightX] : OscClient.FtData[Expressions.EyeRightX], VrcftReceiver.Config.GetValue(VrcftReceiver.ReverseEyesY) ? -OscClient.FtData[Expressions.EyeRightY] : OscClient.FtData[Expressions.EyeRightY]);
+
+        UpdateEye(EyeLeft, _eyes.LeftEye);
+        UpdateEye(EyeRight, _eyes.RightEye);
+        UpdateEye(EyeCombined, _eyes.CombinedEye);
+
+        _eyes.LeftEye.Openness = OscClient.FtData[Expressions.EyeOpenLeft];
+        _eyes.RightEye.Openness = OscClient.FtData[Expressions.EyeOpenRight];
+        _eyes.LeftEye.Widen = OscClient.FtData[Expressions.EyeWideLeft];
+        _eyes.RightEye.Widen = OscClient.FtData[Expressions.EyeWideRight];
+        _eyes.LeftEye.Squeeze = OscClient.FtData[Expressions.EyeSquintLeft];
+        _eyes.RightEye.Squeeze = OscClient.FtData[Expressions.EyeSquintRight];
+
+        float scale = VrcftReceiver.Config.GetValue(VrcftReceiver.PupilDilationScale);
+        (float leftPupilDiameter, float rightPupilDiameter) = GetPupilDiameters();
+        _eyes.LeftEye.PupilDiameter = leftPupilDiameter * scale;
+        _eyes.RightEye.PupilDiameter = rightPupilDiameter * scale;
+
+        float leftBrowLowerer = OscClient.FtData[Expressions.BrowPinchLeft] - OscClient.FtData[Expressions.BrowLowererLeft];
+        _eyes.LeftEye.InnerBrowVertical = OscClient.FtData[Expressions.BrowInnerUpLeft] - leftBrowLowerer;
+        _eyes.LeftEye.OuterBrowVertical = OscClient.FtData[Expressions.BrowOuterUpLeft] - leftBrowLowerer;
+
+        float rightBrowLowerer = OscClient.FtData[Expressions.BrowPinchRight] - OscClient.FtData[Expressions.BrowLowererRight];
+        _eyes.RightEye.InnerBrowVertical = OscClient.FtData[Expressions.BrowInnerUpRight] - rightBrowLowerer;
+        _eyes.RightEye.OuterBrowVertical = OscClient.FtData[Expressions.BrowOuterUpRight] - rightBrowLowerer;
+
+        _eyes.ComputeCombinedEyeParameters();
+        _eyes.FinishUpdate();
+    }
+
+    private static (float left, float right) GetPupilDiameters()
+    {
+        float left = MathX.Max(0f, OscClient.FtData[Expressions.PupilDiameterLeft]);
+        float right = MathX.Max(0f, OscClient.FtData[Expressions.PupilDiameterRight]);
+
+        float combinedDiameter = MathX.Max(0f, OscClient.FtData[Expressions.PupilDiameter]);
+        if (left <= 0f)
+        {
+            left = combinedDiameter;
+        }
+
+        if (right <= 0f)
+        {
+            right = combinedDiameter;
+        }
+
+        if (left > 0f && right > 0f)
+        {
+            return (left, right);
+        }
+
+        float dilation = MathX.Clamp01(OscClient.FtData[Expressions.PupilDilation]);
+        if (dilation <= 0f)
+        {
+            return (left, right);
+        }
+
+        float estimatedDiameter = MathX.Lerp(2f, 8f, dilation);
+        if (left <= 0f)
+        {
+            left = estimatedDiameter;
+        }
+
+        if (right <= 0f)
+        {
+            right = estimatedDiameter;
+        }
+
+        return (left, right);
+    }
+
+    public void UpdateEye(VrcftEye source, Eye dest)
+    {
+        if (source.IsValid)
+        {
+            dest.UpdateWithRotation(source.EyeRotation);
+        }
+    }
+
+    private void UpdateMouth(float deltaTime)
+    {
+        if (!IsTracking(OscClient.LastFaceTracking) || !VrcftReceiver.Config.GetValue(VrcftReceiver.EnableFaceTracking))
+        {
+            _mouth.IsTracking = false;
+            return;
+        }
+
+        _mouth.IsTracking = true;
+        _mouth.MouthLeftSmileFrown = OscClient.FtData[Expressions.MouthSmileLeft] - OscClient.FtData[Expressions.MouthFrownLeft];
+        _mouth.MouthRightSmileFrown = OscClient.FtData[Expressions.MouthSmileRight] - OscClient.FtData[Expressions.MouthFrownRight];
+        _mouth.MouthLeftDimple = OscClient.FtData[Expressions.MouthDimpleLeft];
+        _mouth.MouthRightDimple = OscClient.FtData[Expressions.MouthDimpleRight];
+        _mouth.CheekLeftPuffSuck = OscClient.FtData[Expressions.CheekPuffSuckLeft];
+        _mouth.CheekRightPuffSuck = OscClient.FtData[Expressions.CheekPuffSuckRight];
+        _mouth.CheekLeftRaise = OscClient.FtData[Expressions.CheekSquintLeft];
+        _mouth.CheekRightRaise = OscClient.FtData[Expressions.CheekSquintRight];
+        _mouth.LipUpperLeftRaise = OscClient.FtData[Expressions.MouthUpperUpLeft];
+        _mouth.LipUpperRightRaise = OscClient.FtData[Expressions.MouthUpperUpRight];
+        _mouth.LipLowerLeftRaise = OscClient.FtData[Expressions.MouthLowerDownLeft];
+        _mouth.LipLowerRightRaise = OscClient.FtData[Expressions.MouthLowerDownRight];
+        _mouth.MouthPoutLeft = OscClient.FtData[Expressions.LipPuckerLowerLeft] - OscClient.FtData[Expressions.LipPuckerUpperLeft];
+        _mouth.MouthPoutRight = OscClient.FtData[Expressions.LipPuckerLowerRight] - OscClient.FtData[Expressions.LipPuckerUpperRight];
+        _mouth.LipUpperHorizontal = OscClient.FtData[Expressions.MouthUpperX];
+        _mouth.LipLowerHorizontal = OscClient.FtData[Expressions.MouthLowerX];
+        _mouth.LipTopLeftOverturn = OscClient.FtData[Expressions.LipFunnelUpperLeft];
+        _mouth.LipTopRightOverturn = OscClient.FtData[Expressions.LipFunnelUpperRight];
+        _mouth.LipBottomLeftOverturn = OscClient.FtData[Expressions.LipFunnelLowerLeft];
+        _mouth.LipBottomRightOverturn = OscClient.FtData[Expressions.LipFunnelLowerRight];
+        _mouth.LipTopLeftOverUnder = -OscClient.FtData[Expressions.LipSuckUpperLeft];
+        _mouth.LipTopRightOverUnder = -OscClient.FtData[Expressions.LipSuckUpperRight];
+        _mouth.LipBottomLeftOverUnder = -OscClient.FtData[Expressions.LipSuckLowerLeft];
+        _mouth.LipBottomRightOverUnder = -OscClient.FtData[Expressions.LipSuckLowerRight];
+        _mouth.LipLeftStretchTighten = OscClient.FtData[Expressions.MouthStretchLeft] - OscClient.FtData[Expressions.MouthTightenerLeft];
+        _mouth.LipRightStretchTighten = OscClient.FtData[Expressions.MouthStretchRight] - OscClient.FtData[Expressions.MouthTightenerRight];
+        _mouth.LipsLeftPress = OscClient.FtData[Expressions.MouthPressLeft];
+        _mouth.LipsRightPress = OscClient.FtData[Expressions.MouthPressRight];
+        _mouth.Jaw = new float3(OscClient.FtData[Expressions.JawRight] - OscClient.FtData[Expressions.JawLeft], -OscClient.FtData[Expressions.MouthClosed], OscClient.FtData[Expressions.JawForward]);
+        _mouth.JawOpen = MathX.Clamp01(OscClient.FtData[Expressions.JawOpen] - OscClient.FtData[Expressions.MouthClosed]);
+        _mouth.Tongue = new float3(OscClient.FtData[Expressions.TongueX], OscClient.FtData[Expressions.TongueY], OscClient.FtData[Expressions.TongueOut]);
+        _mouth.TongueRoll = OscClient.FtData[Expressions.TongueRoll];
+        _mouth.NoseWrinkleLeft = OscClient.FtData[Expressions.NoseSneerLeft];
+        _mouth.NoseWrinkleRight = OscClient.FtData[Expressions.NoseSneerRight];
+        _mouth.ChinRaiseBottom = OscClient.FtData[Expressions.MouthRaiserLower];
+        _mouth.ChinRaiseTop = OscClient.FtData[Expressions.MouthRaiserUpper];
+    }
+
+    private static bool IsTracking(DateTime? timestamp)
+    {
+        if (VrcftReceiver.Config.GetValue(VrcftReceiver.TrackingTimeoutSeconds) == -1)
+        {
+            return true;
+        }
+
+        if (!timestamp.HasValue)
+        {
+            return false;
+        }
+
+        if ((DateTime.UtcNow - timestamp.Value).TotalSeconds > VrcftReceiver.Config.GetValue(VrcftReceiver.TrackingTimeoutSeconds))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public void AvatarChange(object value) => AvatarChange();
+
+    public void AvatarChange()
+    {
+        foreach (OSCQueryServiceProfile profile in _oscQuery.Profiles)
+        {
+            if (profile.name.StartsWith("VRCFT"))
+            {
+                string avatar = VrcftReceiver.Config.GetValue(VrcftReceiver.AvatarName);
+                OscClient.SendMessage(profile.address, profile.port, "/avatar/change", avatar);
+                OscClient.SendMessage(profile.address, profile.port, "/avatar/name", avatar);
+                OscClient.SendMessage(profile.address, profile.port, "/avatar/id", avatar);
+            }
+        }
+    }
 }
