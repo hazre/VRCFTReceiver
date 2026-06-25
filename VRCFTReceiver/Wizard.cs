@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Elements.Core;
 using FrooxEngine;
 using FrooxEngine.UIX;
+using ResoniteModLoader;
 
 namespace VRCFTReceiver;
 
@@ -12,83 +13,75 @@ public class Wizard
 {
     public static Dictionary<string, float> OscValues = new Dictionary<string, float>();
 
-    public Slot WizardSlot { get; private set; }
-    public Slot DataSlot { get; private set; }
+    public Slot Slot { get; }
+    public Slot DataSlot { get; }
+    public DynamicVariableSpace Space { get; }
 
     private readonly UIBuilder _ui;
 
     public Wizard(Slot x)
     {
-        WizardSlot = x;
-
-        WizardSlot.AttachComponent<DynamicVariableSpace>().SpaceName.Value = "VRCFT";
-
-        DataSlot = WizardSlot.AddSlot("Data");
-
-        WizardSlot.PersistentSelf = false;
-        WizardSlot.LocalScale *= 0.0008f;
-
-        _ui = RadiantUI_Panel.SetupPanel(WizardSlot, "VRCFT Address Debug", new float2(1000f, 756f));
+        Slot = x;
+        
+        Space = Slot.AttachComponent<DynamicVariableSpace>();
+        Space.SpaceName.Value = "VRCFT";
+        
+        DataSlot = Slot.AddSlot("Data");
+        
+        Slot.PersistentSelf = false;
+        Slot.LocalScale *= 0.0008f;
+        
+        _ui = RadiantUI_Panel.SetupPanel(Slot, "VRCFT Address Debug", new float2(1000f, 756f));
         RadiantUI_Constants.SetupEditorStyle(_ui);
-
+        
         _ui.Canvas.AcceptPhysicalTouch.Value = false;
-
+        
         _ui.ScrollArea();
         _ui.VerticalLayout(4f);
         _ui.FitContent(SizeFit.Disabled, SizeFit.PreferredSize);
         _ui.Style.MinHeight = 32f;
         _ui.Style.PreferredHeight = 32f;
-
-        x.World.Coroutines.StartTask(ProcessWizard);
-
-        WizardSlot.PositionInFrontOfUser(float3.Backward, distance: 1f);
+        
+        Slot.World.Coroutines.StartTask(ProcessWizard);
     }
 
     private async Task ProcessWizard()
     {
-        Dictionary<string, Dictionary<DynamicValueVariable<float>, PrimitiveMemberEditor>> elements = new Dictionary<string, Dictionary<DynamicValueVariable<float>, PrimitiveMemberEditor>>();
-
-        Dictionary<string, float> lastValues = new Dictionary<string, float>();
-
-        while (WizardSlot?.FilterWorldElement() != null)
+        await default(ToWorld);
+        while (Slot?.FilterWorldElement() != null)
         {
-            await default(ToWorld);
-
-            Dictionary<string, float> snapshot = new Dictionary<string, float>(OscValues);
-
-            foreach (KeyValuePair<string, float> thing in snapshot)
+            try
             {
-                if (elements.TryGetValue(thing.Key, out Dictionary<DynamicValueVariable<float>, PrimitiveMemberEditor> element))
+                await default(ToWorld);
+                foreach ((string address, float oscValue) in new Dictionary<string, float>(OscValues))
                 {
-                    foreach (KeyValuePair<DynamicValueVariable<float>, PrimitiveMemberEditor> thing2 in element)
+                    string addressName = DynamicVariableHelper.ProcessName(address.Split("/")[^1]);
+                    if (Space.TryReadValue(addressName, out float dynValue))
                     {
-                        if (WizardSlot.World.CanCurrentThreadModify)
-                        {
-                            bool changed = !lastValues.TryGetValue(thing.Key, out float last) || Math.Abs(last - thing.Value) > 0.0001f;
+                        Space.TryWriteValue(addressName, Math.Abs(dynValue - oscValue) > 0.0001f ? colorX.Green : colorX.Red);
+                        Space.TryWriteValue(addressName, oscValue);
+                    }
+                    else
+                    {
+                        Slot dataSlot = DataSlot.FindChildOrAdd(address);
 
-                            thing2.Key.Value.Value = thing.Value;
-                            thing2.Value.Slot.Parent[0][0].GetComponent<Text>().Color.Value = changed ? colorX.Green : colorX.Red;
+                        DynamicValueVariable<float> floatVar = dataSlot.AttachComponent<DynamicValueVariable<float>>();
+                        floatVar.VariableName.Value = addressName;
+                        floatVar.Value.Value = oscValue;
 
-                            lastValues[thing.Key] = thing.Value;
-                        }
+                        DynamicValueVariable<colorX> colorVar = dataSlot.AttachComponent<DynamicValueVariable<colorX>>();
+                        colorVar.VariableName.Value = addressName;
+                        colorVar.Value.Value = colorX.Red;
+
+                        PrimitiveMemberEditor editor = _ui.HorizontalElementWithLabel(address, 0.4f, () => _ui.PrimitiveMemberEditor(floatVar.Value));
+                        editor.Slot.Parent[0][0].GetComponent<Text>().Color.DriveFrom(colorVar.Value);
                     }
                 }
-                else
-                {
-                    if (WizardSlot.World.CanCurrentThreadModify)
-                    {
-                        DynamicValueVariable<float> var = DataSlot.FindChildOrAdd(thing.Key).AttachComponent<DynamicValueVariable<float>>();
-
-                        var.VariableName.Value = DynamicVariableHelper.ProcessName(thing.Key.Split("/")[^1]);
-
-                        elements.Add(thing.Key, new Dictionary<DynamicValueVariable<float>, PrimitiveMemberEditor>
-                        {
-                            { var, _ui.HorizontalElementWithLabel(thing.Key, 0.4f, () => _ui.PrimitiveMemberEditor(var.Value)) }
-                        });
-
-                        lastValues[thing.Key] = thing.Value;
-                    }
-                }
+                await default(ToBackground);
+            }
+            catch (Exception e)
+            {
+                ResoniteMod.Error(e);
             }
         }
     }

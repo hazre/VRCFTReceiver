@@ -65,6 +65,10 @@ public class OscClient : IDisposable
                         ProcessOscMessage(message as OscMessage);
                     }
                 }
+                else if (packet is OscMessage message)
+                {
+                    ProcessOscMessage(message);
+                }
             }
             catch (Exception ex)
             {
