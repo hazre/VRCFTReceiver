@@ -33,6 +33,7 @@ VRCFTReceiver translates VRCFaceTracking data into Resonite's native tracking sy
 ### Eye Tracking
 - Eye position (X/Y coordinates for left and right eyes)
 - Eye openness, widening, and squinting
+- Eye Dilation
 - Eyebrow movements (inner/outer brow vertical positions)
 - Combined eye tracking for unified gaze direction
 
